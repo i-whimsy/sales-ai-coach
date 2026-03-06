@@ -2,6 +2,28 @@
 
 AI Sales Coaching System 是一个企业内部使用的AI销售培训系统。销售人员可以上传自己的讲解录音，系统会自动识别语音、分析表达质量、评估讲解逻辑、模拟客户理解，并生成详细的评分报告，帮助企业评估销售讲解能力并提供优化建议。
 
+## 🎉 最新更新 (2026-03-06)
+
+### 1. 一键启动脚本
+- 🚀 新增多平台一键启动脚本，支持 Windows、Linux、macOS
+- 📦 自动环境检测、依赖安装、服务启动全流程自动化
+- 📊 集成健康检查、日志管理、自动打开浏览器功能
+
+### 2. 自动提交到GitHub
+- 🔄 任务完成后自动将代码提交到GitHub远程仓库
+- 📝 支持自定义提交信息
+- 🔒 支持SSH和HTTPS两种认证方式
+
+### 3. 完善的文档体系
+- 📚 新增 `RUNNING_GUIDE.md` 详细使用指南
+- 🛠️ 新增故障排除章节
+- 📋 平台特定操作说明
+
+### 4. 用户体验优化
+- 🎨 改进前端界面设计，更美观易用
+- 🔧 修复报告页面加载错误
+- 📈 优化后端性能和稳定性
+
 ## 核心功能
 
 ### 1. 音频上传
@@ -81,10 +103,48 @@ sales-ai-coach/
 │   ├── components/        # React组件
 │   ├── lib/              # 工具函数
 │   └── package.json       # 前端依赖
+├── logs/                   # 日志文件
+├── RUNNING_GUIDE.md       # 详细使用指南
+├── start-all.bat          # Windows Batch启动脚本
+├── start-all.ps1          # Windows PowerShell启动脚本
+├── start-all.sh           # Linux/macOS启动脚本
+├── stop-all.bat           # Windows停止脚本
+├── stop-all.sh            # Linux/macOS停止脚本
 └── README.md             # 项目说明
 ```
 
-## 安装和运行
+## 🚀 一键启动 (推荐)
+
+### Windows系统
+```powershell
+# 使用PowerShell（推荐）
+.
+\start-final.ps1
+
+# 或者使用Batch脚本
+start-all.bat
+```
+
+### Linux/macOS系统
+```bash
+# 添加执行权限
+chmod +x start-all.sh stop-all.sh
+
+# 启动服务
+./start-all.sh
+```
+
+### 停止服务
+```powershell
+# Windows系统
+.
+\stop-all.bat
+
+# Linux/macOS系统
+./stop-all.sh
+```
+
+## 🛠️ 手动安装和运行
 
 ### 1. 环境要求
 - Python 3.8 或更高版本
@@ -201,13 +261,26 @@ npm run dev
 python -c "from database import engine; import models; models.Base.metadata.create_all(bind=engine)"
 ```
 
+## 🔄 自动提交到GitHub
+
+系统会在每次完成任务后自动将代码提交到GitHub。您也可以手动运行：
+
+```powershell
+# Windows系统
+.
+\commit-to-github.ps1 -message "您的提交信息"
+
+# Linux/macOS系统
+./commit-to-github.sh "您的提交信息"
+```
+
 ## 许可证
 
 MIT License
 
-## 联系方式
+## 📞 联系方式
 
 如有问题或建议，请通过以下方式联系：
 
+- GitHub: https://github.com/i-whimsy/sales-ai-coach
 - Email: contact@example.com
-- GitHub: https://github.com/your-username/sales-ai-coach

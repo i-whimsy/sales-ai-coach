@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
-import { Progress } from "@/components/ui/Progress";
+import { Progress } from "@/components/ui/progress";
 
-export default function ProgressPage() {
+function ProgressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const recordingId = searchParams.get("recordingId");
@@ -90,5 +90,25 @@ export default function ProgressPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ProgressPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="max-w-3xl mx-auto px-6 py-24 text-center">
+          <div className="space-y-4">
+            <div className="text-4xl animate-spin">🔄</div>
+            <h1 className="text-2xl font-bold text-foreground">
+              正在加载...
+            </h1>
+          </div>
+        </main>
+      </div>
+    }>
+      <ProgressContent />
+    </Suspense>
   );
 }

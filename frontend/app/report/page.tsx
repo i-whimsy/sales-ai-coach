@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { RadarChart } from "@/components/ui/RadarChart";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
-export default function ReportPage() {
+function ReportContent() {
   const searchParams = useSearchParams();
   const recordingId = searchParams.get("recordingId");
   const [report, setReport] = useState<any>(null);
@@ -154,5 +154,25 @@ export default function ReportPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="max-w-5xl mx-auto px-6 py-24 text-center">
+          <div className="space-y-4">
+            <div className="text-4xl animate-spin">🔄</div>
+            <h1 className="text-2xl font-bold text-foreground">
+              正在加载报告...
+            </h1>
+          </div>
+        </main>
+      </div>
+    }>
+      <ReportContent />
+    </Suspense>
   );
 }

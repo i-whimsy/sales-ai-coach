@@ -1,20 +1,33 @@
+"""AI Sales Coaching System - Backend API"""
+
+import os
+import shutil
 from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from database import get_db, create_database
-from models import Recording
-from speech_analysis import SpeechAnalyzer
-from ai_analyzer import AIAnalyzer
-from config import settings
-import os
+from typing import List, Dict, Any
+import uuid
+import magic
 import tempfile
-from datetime import datetime
-import json
 
-app = FastAPI(title="AI Sales Coaching System", version="1.0.0")
+from config import settings
+from database import get_db, engine
+import models
+import speech_analysis
+import ai_analyzer
 
-# CORS配置
+# Create tables
+models.Base.metadata.create_all(bind=engine)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    description="AI Sales Coaching System API"
+)
+
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,136 +36,322 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 初始化数据库
-create_database()
+# Initialize analyzers
+speech_analyzer = speech_analysis.SpeechAnalyzer()
 
-# 初始化分析器
-speech_analyzer = SpeechAnalyzer()
-ai_analyzer = AIAnalyzer()
+# Directory for uploaded files
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@app.post("/api/upload")
-async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """音频上传"""
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "version": settings.VERSION}
+
+
+@app.post("/api/v1/recordings")
+async def upload_recording(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Upload recording file"""
     try:
-        # 保存文件到临时目录
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
-            temp_file.write(await file.read())
-            temp_file_path = temp_file.name
+        # Validate file type
+        file_type = magic.from_buffer(await file.read(), mime=True)
+        await file.seek(0)  # Reset file pointer
         
-        # 分析音频
-        speech_analysis = speech_analyzer.analyze_speech(temp_file_path)
+        valid_types = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/m4a"]
+        if file_type not in valid_types:
+            raise HTTPException(status_code=400, detail="Invalid file type")
         
-        # AI分析
-        content_analysis = ai_analyzer.analyze_content_completeness(speech_analysis["transcription"])
-        logic_analysis = ai_analyzer.analyze_logic_structure(speech_analysis["transcription"])
-        customer_analysis = ai_analyzer.simulate_customer_understanding(speech_analysis["transcription"])
-        persuasion_analysis = ai_analyzer.analyze_persuasion(speech_analysis["transcription"])
+        # Save file
+        file_extension = file.filename.split(".")[-1].lower()
+        file_id = str(uuid.uuid4())
+        file_path = os.path.join(UPLOAD_DIR, f"{file_id}.{file_extension}")
         
-        # 生成报告
-        report = ai_analyzer.generate_report(
-            speech_analysis,
-            content_analysis,
-            logic_analysis,
-            customer_analysis,
-            persuasion_analysis
-        )
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
         
-        # 保存到数据库
-        recording = Recording(
+        # Create database entry
+        recording = models.Recording(
             file_name=file.filename,
-            upload_time=datetime.utcnow(),
-            score=report["total_score"],
-            report_json=json.dumps(report, ensure_ascii=False)
+            file_path=file_path
         )
-        
         db.add(recording)
         db.commit()
         db.refresh(recording)
         
-        # 删除临时文件
-        os.unlink(temp_file_path)
-        
-        return JSONResponse(content={
-            "message": "Analysis completed successfully",
-            "recording_id": recording.id,
-            "report": report
-        })
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/recordings")
-async def get_recordings(db: Session = Depends(get_db)):
-    """获取历史记录"""
-    recordings = db.query(Recording).order_by(Recording.upload_time.desc()).all()
-    
-    return JSONResponse(content={
-        "recordings": [{
+        return JSONResponse(status_code=201, content={
             "id": recording.id,
             "file_name": recording.file_name,
             "upload_time": recording.upload_time.isoformat(),
-            "score": recording.score
-        } for recording in recordings]
-    })
+            "status": "uploaded"
+        })
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
 
-@app.get("/api/report/{recording_id}")
-async def get_report(recording_id: int, db: Session = Depends(get_db)):
-    """获取报告"""
-    recording = db.query(Recording).filter(Recording.id == recording_id).first()
-    
-    if not recording:
-        raise HTTPException(status_code=404, detail="Recording not found")
-    
+
+@app.post("/api/v1/recordings/{recording_id}/analyze")
+async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
+    """Analyze recording"""
     try:
-        report = json.loads(recording.report_json)
-    except:
-        report = {}
+        # Get recording from database
+        recording = db.query(models.Recording).filter(
+            models.Recording.id == recording_id
+        ).first()
+        
+        if not recording:
+            raise HTTPException(status_code=404, detail="Recording not found")
+        
+        # Get API key config
+        api_config = db.query(models.ApiKeyConfig).first()
+        config = {}
+        if api_config:
+            config = {
+                "openai_api_key": api_config.openai_api_key,
+                "deepseek_api_key": api_config.deepseek_api_key,
+                "claude_api_key": api_config.claude_api_key,
+                "whisper_api_key": api_config.whisper_api_key
+            }
+        
+        # Initialize AI analyzer
+        ai = ai_analyzer.AIAnalyzer(config)
+        
+        # Transcribe audio
+        transcript, duration = speech_analyzer.transcribe_audio(recording.file_path)
+        recording.transcript = transcript
+        db.commit()
+        
+        # Analyze speech characteristics
+        speech_result = speech_analyzer.analyze_expression_quality(transcript, duration)
+        
+        # Analyze with AI
+        scoring_config = db.query(models.ScoringConfig).filter(
+            models.ScoringConfig.is_active == True
+        ).first()
+        
+        score_weights = None
+        if scoring_config:
+            score_weights = {
+                "expression_weight": scoring_config.expression_weight,
+                "content_weight": scoring_config.content_weight,
+                "logic_weight": scoring_config.logic_weight,
+                "customer_weight": scoring_config.customer_weight,
+                "persuasion_weight": scoring_config.persuasion_weight
+            }
+        
+        # Generate report
+        report = ai.generate_report(transcript, speech_result, score_weights)
+        
+        # Save report
+        recording.report_json = report
+        recording.score = report["total_score"]
+        db.commit()
+        
+        return JSONResponse(status_code=200, content={
+            "id": recording.id,
+            "file_name": recording.file_name,
+            "total_score": report["total_score"],
+            "report": report,
+            "status": "analyzed"
+        })
     
-    return JSONResponse(content={
-        "recording_id": recording.id,
-        "file_name": recording.file_name,
-        "report": report,
-        "score": recording.score
-    })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing recording: {str(e)}")
 
-@app.get("/api/config")
-async def get_config():
-    """获取配置"""
-    return JSONResponse(content={
-        "api_keys": {
-            "openai": len(settings.OPENAI_API_KEY) > 0,
-            "claude": len(settings.CLAUDE_API_KEY) > 0,
-            "deepseek": len(settings.DEEPSEEK_API_KEY) > 0,
-            "whisper": len(settings.WHISPER_API_KEY) > 0
+
+@app.get("/api/v1/recordings")
+async def get_recordings(db: Session = Depends(get_db)):
+    """Get all recordings"""
+    try:
+        recordings = db.query(models.Recording).all()
+        result = []
+        for recording in recordings:
+            item = {
+                "id": recording.id,
+                "file_name": recording.file_name,
+                "upload_time": recording.upload_time.isoformat(),
+                "score": recording.score,
+                "status": "analyzed" if recording.report_json else "uploaded"
+            }
+            result.append(item)
+        
+        return {"recordings": result}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching recordings: {str(e)}")
+
+
+@app.get("/api/v1/recordings/{recording_id}")
+async def get_recording(recording_id: int, db: Session = Depends(get_db)):
+    """Get recording by ID"""
+    try:
+        recording = db.query(models.Recording).filter(
+            models.Recording.id == recording_id
+        ).first()
+        
+        if not recording:
+            raise HTTPException(status_code=404, detail="Recording not found")
+        
+        return {
+            "id": recording.id,
+            "file_name": recording.file_name,
+            "upload_time": recording.upload_time.isoformat(),
+            "score": recording.score,
+            "transcript": recording.transcript,
+            "report": recording.report_json,
+            "status": "analyzed" if recording.report_json else "uploaded"
         }
-    })
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching recording: {str(e)}")
 
-@app.post("/api/config")
-async def set_config(openai_key: str = None, claude_key: str = None, deepseek_key: str = None, whisper_key: str = None):
-    """保存配置"""
-    if openai_key:
-        settings.OPENAI_API_KEY = openai_key
-    
-    if claude_key:
-        settings.CLAUDE_API_KEY = claude_key
-    
-    if deepseek_key:
-        settings.DEEPSEEK_API_KEY = deepseek_key
-    
-    if whisper_key:
-        settings.WHISPER_API_KEY = whisper_key
-    
-    return JSONResponse(content={"message": "Config updated successfully"})
 
-@app.get("/api/health")
-async def health_check():
-    """健康检查"""
-    return {"status": "healthy"}
+@app.delete("/api/v1/recordings/{recording_id}")
+async def delete_recording(recording_id: int, db: Session = Depends(get_db)):
+    """Delete recording"""
+    try:
+        recording = db.query(models.Recording).filter(
+            models.Recording.id == recording_id
+        ).first()
+        
+        if not recording:
+            raise HTTPException(status_code=404, detail="Recording not found")
+        
+        # Remove file
+        if os.path.exists(recording.file_path):
+            os.remove(recording.file_path)
+        
+        # Delete from database
+        db.delete(recording)
+        db.commit()
+        
+        return {"message": "Recording deleted successfully"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting recording: {str(e)}")
 
-@app.get("/")
-async def root():
-    """根路径"""
-    return {"message": "AI Sales Coaching System API"}
+
+@app.get("/api/v1/api-config")
+async def get_api_config(db: Session = Depends(get_db)):
+    """Get API key configuration"""
+    try:
+        config = db.query(models.ApiKeyConfig).first()
+        if config:
+            return {
+                "openai_api_key": config.openai_api_key,
+                "deepseek_api_key": config.deepseek_api_key,
+                "claude_api_key": config.claude_api_key,
+                "whisper_api_key": config.whisper_api_key
+            }
+        return {
+            "openai_api_key": None,
+            "deepseek_api_key": None,
+            "claude_api_key": None,
+            "whisper_api_key": None
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching API config: {str(e)}")
+
+
+@app.post("/api/v1/api-config")
+async def update_api_config(config_data: dict, db: Session = Depends(get_db)):
+    """Update API key configuration"""
+    try:
+        config = db.query(models.ApiKeyConfig).first()
+        if not config:
+            config = models.ApiKeyConfig()
+            db.add(config)
+        
+        if "openai_api_key" in config_data:
+            config.openai_api_key = config_data["openai_api_key"]
+        if "deepseek_api_key" in config_data:
+            config.deepseek_api_key = config_data["deepseek_api_key"]
+        if "claude_api_key" in config_data:
+            config.claude_api_key = config_data["claude_api_key"]
+        if "whisper_api_key" in config_data:
+            config.whisper_api_key = config_data["whisper_api_key"]
+        
+        db.commit()
+        db.refresh(config)
+        
+        return {
+            "openai_api_key": config.openai_api_key,
+            "deepseek_api_key": config.deepseek_api_key,
+            "claude_api_key": config.claude_api_key,
+            "whisper_api_key": config.whisper_api_key
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating API config: {str(e)}")
+
+
+@app.get("/api/v1/scoring-config")
+async def get_scoring_config(db: Session = Depends(get_db)):
+    """Get scoring configuration"""
+    try:
+        config = db.query(models.ScoringConfig).filter(
+            models.ScoringConfig.is_active == True
+        ).first()
+        
+        if not config:
+            return {
+                "expression_weight": 0.20,
+                "content_weight": 0.30,
+                "logic_weight": 0.20,
+                "customer_weight": 0.20,
+                "persuasion_weight": 0.10
+            }
+        
+        return {
+            "expression_weight": config.expression_weight,
+            "content_weight": config.content_weight,
+            "logic_weight": config.logic_weight,
+            "customer_weight": config.customer_weight,
+            "persuasion_weight": config.persuasion_weight
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching scoring config: {str(e)}")
+
+
+@app.post("/api/v1/scoring-config")
+async def update_scoring_config(config_data: dict, db: Session = Depends(get_db)):
+    """Update scoring configuration"""
+    try:
+        config = db.query(models.ScoringConfig).filter(
+            models.ScoringConfig.is_active == True
+        ).first()
+        
+        if not config:
+            config = models.ScoringConfig(name="Default Scoring")
+            db.add(config)
+        
+        if "expression_weight" in config_data:
+            config.expression_weight = config_data["expression_weight"]
+        if "content_weight" in config_data:
+            config.content_weight = config_data["content_weight"]
+        if "logic_weight" in config_data:
+            config.logic_weight = config_data["logic_weight"]
+        if "customer_weight" in config_data:
+            config.customer_weight = config_data["customer_weight"]
+        if "persuasion_weight" in config_data:
+            config.persuasion_weight = config_data["persuasion_weight"]
+        
+        db.commit()
+        db.refresh(config)
+        
+        return {
+            "expression_weight": config.expression_weight,
+            "content_weight": config.content_weight,
+            "logic_weight": config.logic_weight,
+            "customer_weight": config.customer_weight,
+            "persuasion_weight": config.persuasion_weight
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating scoring config: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn

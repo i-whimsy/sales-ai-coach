@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Layout from "@/components/Layout";
 
 export const metadata: Metadata = {
-  title: "AI Sales Coaching",
-  description: "企业内部AI销售培训系统",
+  title: "AI Sales Coaching System",
+  description: "AI Sales Coaching System",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body className="antialiased">
+        <Layout>{children}</Layout>
+      </body>
     </html>
   );
 }

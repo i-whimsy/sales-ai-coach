@@ -76,21 +76,21 @@ echo
 echo "🎯 启动前端服务器..."
 
 # 检查前端依赖
-if [ ! -d "frontend/node_modules" ]; then
+if [ ! -d "frontend-vue/node_modules" ]; then
     echo "🔧 安装前端依赖..."
-    cd frontend
+    cd frontend-vue
     npm install
     cd ..
     echo "✅ 前端依赖安装完成"
 fi
 
 # 启动前端
-cd frontend
+cd frontend-vue
 nohup npm run dev > ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo $FRONTEND_PID > ../logs/frontend.pid
 cd ..
-echo "✅ 前端服务器已启动 (端口: 3000, PID: $FRONTEND_PID)"
+echo "✅ 前端服务器已启动 (端口: 3002, PID: $FRONTEND_PID)"
 
 # 等待前端启动
 sleep 5
@@ -99,11 +99,11 @@ sleep 5
 echo
 echo "🌐 启动浏览器..."
 if command -v open >/dev/null 2>&1; then
-    open http://localhost:3000
+    open http://localhost:3002
 elif command -v xdg-open >/dev/null 2>&1; then
-    xdg-open http://localhost:3000
+    xdg-open http://localhost:3002
 else
-    echo "⚠️  请手动在浏览器中访问: http://localhost:3000"
+    echo "⚠️  请手动在浏览器中访问: http://localhost:3002"
 fi
 
 echo
@@ -112,7 +112,7 @@ echo "🎉 AI销售教练系统启动完成！"
 echo "==============================================="
 echo
 echo "📊 系统访问地址:"
-echo "   前端界面: http://localhost:3000"
+echo "   前端界面: http://localhost:3002"
 echo "   后端API:  http://localhost:8000"
 echo
 echo "📋 日志文件位置:"

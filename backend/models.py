@@ -12,6 +12,7 @@ class Recording(Base):
     __tablename__ = "recordings"
     
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=True)  # Custom name given by user
     file_name = Column(String, index=True, nullable=False)
     file_path = Column(String, nullable=False)
     upload_time = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -20,7 +21,7 @@ class Recording(Base):
     transcript = Column(String, nullable=True)
     
     def __repr__(self):
-        return f"<Recording(id={self.id}, file_name={self.file_name}, score={self.score})>"
+        return f"<Recording(id={self.id}, name={self.name}, file_name={self.file_name}, score={self.score})>"
 
 
 class ApiKeyConfig(Base):
@@ -56,3 +57,18 @@ class ScoringConfig(Base):
     
     def __repr__(self):
         return f"<ScoringConfig(id={self.id}, name={self.name})>"
+
+
+class Comparison(Base):
+    """Model for storing recording comparison results"""
+    __tablename__ = "comparisons"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    recording1_id = Column(Integer, nullable=False)
+    recording2_id = Column(Integer, nullable=False)
+    comparison_result = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f"<Comparison(id={self.id}, name={self.name}, recording1={self.recording1_id}, recording2={self.recording2_id})>"

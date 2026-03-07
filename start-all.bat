@@ -65,19 +65,19 @@ echo.
 echo 🎯 启动前端服务器...
 
 REM 检查前端依赖
-if not exist "frontend\node_modules" (
+if not exist "frontend-vue\node_modules" (
     echo 🔧 安装前端依赖...
-    cd frontend
+    cd frontend-vue
     npm install
     cd ..
     echo ✅ 前端依赖安装完成
 )
 
 REM 启动前端
-cd frontend
+cd frontend-vue
 start "Frontend Server" /MIN npm run dev
 cd ..
-echo ✅ 前端服务器已启动 (端口: 3000)
+echo ✅ 前端服务器已启动 (端口: 3002)
 
 REM 等待前端启动
 timeout /t 5 /nobreak >nul
@@ -85,7 +85,7 @@ timeout /t 5 /nobreak >nul
 REM 启动浏览器
 echo.
 echo 🌐 启动浏览器...
-start http://localhost:3000
+start http://localhost:3002
 
 echo.
 echo ==============================================
@@ -93,7 +93,7 @@ echo 🎉 AI销售教练系统启动完成！
 echo ==============================================
 echo.
 echo 📊 系统访问地址:
-echo    前端界面: http://localhost:3000
+echo    前端界面: http://localhost:3002
 echo    后端API:  http://localhost:8000
 echo.
 echo 📋 日志文件位置:

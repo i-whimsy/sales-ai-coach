@@ -2,7 +2,8 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from contextlib import contextmanager
 
 from config import settings
 
@@ -24,9 +25,24 @@ Base = declarative_base()
 
 
 def get_db():
-    """Dependency to get database session"""
+    """Dependency to get database session - generator for FastAPI Depends()"""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+@contextmanager
+def get_db_context():
+    """Context manager to get database session - for non-FastAPI code"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_db_sync() -> Session:
+    """Get database session directly - caller must close manually"""
+    return SessionLocal()

@@ -11,6 +11,17 @@ from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.requests import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
+# Custom middleware to handle large file uploads
+class LargeFileMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "POST" and request.url.path == "/api/v1/recordings":
+            # Increase timeout for large file uploads
+            request.scope["timeout"] = 600  # 10 minutes
+        response = await call_next(request)
+        return response
 from pydantic import BaseModel
 import numpy as np
 
@@ -18,7 +29,8 @@ import numpy as np
 app = FastAPI(
     title="AI Sales Coaching System",
     version="2.0.0",
-    description="A simplified and improved AI sales coaching backend service"
+    description="A simplified and improved AI sales coaching backend service",
+    max_upload_size=200 * 1024 * 1024  # 200MB
 )
 
 # Configure CORS
@@ -29,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add large file middleware
+app.add_middleware(LargeFileMiddleware)
 
 # Upload directory
 UPLOAD_DIR = "uploads"
@@ -85,15 +100,33 @@ def generate_mock_report(transcript: str = "") -> Dict[str, Any]:
     ]
     
     return {
-        "total_score": round(total_score, 1),
-        "expression_score": round(scores["expression"], 1),
-        "content_score": round(scores["content"], 1),
-        "logic_score": round(scores["logic"], 1),
-        "customer_score": round(scores["customer"], 1),
-        "persuasion_score": round(scores["persuasion"], 1),
+        "totalScore": round(total_score, 1),
+        "dimensionScores": {
+            "expression": round(scores["expression"], 1),
+            "content": round(scores["content"], 1),
+            "logic": round(scores["logic"], 1),
+            "customerUnderstanding": round(scores["customer"], 1),
+            "persuasion": round(scores["persuasion"], 1)
+        },
         "strengths": strengths,
         "improvements": improvements,
-        "transcript": transcript or "这是一段模拟的销售对话...",
+        "transcript": transcript or """这是一段模拟的销售对话:
+
+顾客: 你好，我想了解一下你们的产品。
+
+销售: 您好！很高兴为您介绍我们的智能销售系统。这个系统可以帮助您自动分析销售录音，评估表达能力、内容完整性、逻辑结构、客户理解度和说服力。
+
+顾客: 听起来不错，能具体说说吗？
+
+销售: 当然！我们的系统使用先进的AI技术，可以自动将语音转换为文本，然后进行多维度分析。它会给出总体评分和详细的改进建议。
+
+顾客: 那价格呢？
+
+销售: 我们提供多种套餐，价格从每月几百元到几千元不等，根据企业规模和需求定制。
+
+顾客: 好的，我考虑一下。
+
+销售: 没问题！这是我们的资料，您可以先了解一下，有任何问题随时联系我。""",
         "analysis_date": datetime.now().isoformat()
     }
 
@@ -116,6 +149,7 @@ class RecordingResponse(BaseModel):
     status: str
     score: Optional[float] = None
     file_path: str = ""
+    stt_model: str = "Local Whisper"
 
 class AnalysisRequest(BaseModel):
     recording_id: str
@@ -126,6 +160,7 @@ class AnalysisResponse(BaseModel):
     total_score: float
     report: Dict[str, Any]
     status: str
+    stt_model: str = "Local Whisper"
 
 # Upload recording endpoint
 @app.post("/api/v1/recordings", response_model=RecordingResponse)
@@ -136,11 +171,23 @@ async def upload_recording(file: UploadFile = File(...)):
         recording_id = str(uuid.uuid4())
         
         # Validate file type
-        valid_types = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/m4a"]
+        valid_types = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/m4a", "audio/x-m4a"]
         if file.content_type not in valid_types:
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid file type. Supported types: {', '.join(valid_types)}"
+            )
+        
+        # Validate file size
+        file.file.seek(0, 2)  # Move to end of file
+        file_size = file.file.tell()
+        file.file.seek(0)  # Move back to start
+        
+        max_size = 200 * 1024 * 1024  # 200MB
+        if file_size > max_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large. Maximum size is 200MB (file size: {file_size / 1024 / 1024:.1f}MB)"
             )
         
         # Save file
@@ -158,7 +205,8 @@ async def upload_recording(file: UploadFile = File(...)):
             "upload_time": datetime.now().isoformat(),
             "status": "uploaded",
             "score": None,
-            "report": None
+            "report": None,
+            "stt_model": "Local Whisper"
         }
         
         return RecordingResponse(
@@ -166,7 +214,8 @@ async def upload_recording(file: UploadFile = File(...)):
             file_name=file.filename,
             upload_time=datetime.now().isoformat(),
             status="uploaded",
-            file_path=file_path
+            file_path=file_path,
+            stt_model="Local Whisper"
         )
         
     except Exception as e:
@@ -226,9 +275,10 @@ async def analyze_recording(recording_id: str):
     return {
         "id": recording_id,
         "file_name": recording["file_name"],
-        "total_score": report["total_score"],
+        "total_score": report["totalScore"],
         "report": report,
-        "status": "analyzed"
+        "status": "analyzed",
+        "stt_model": recording.get("stt_model", "Local Whisper")
     }
 
 # Delete recording endpoint
@@ -296,7 +346,45 @@ async def get_sample_report(report_id: str = "1"):
         "2": generate_mock_report(),
         "3": generate_mock_report()
     }
-    return sample_reports.get(report_id, sample_reports["1"])
+    report = sample_reports.get(report_id, sample_reports["1"])
+    return {
+        "id": report_id,
+        "file_name": "sample-recording.mp3",
+        "total_score": report["totalScore"],
+        "report": report,
+        "status": "analyzed",
+        "stt_model": "Local Whisper"
+    }
+
+# Transcript download endpoint
+@app.get("/api/v1/transcript/{recording_id}")
+async def get_transcript(recording_id: str):
+    """Download transcript as TXT file"""
+    if recording_id not in recordings_db:
+        raise HTTPException(
+            status_code=404,
+            detail="Recording not found"
+        )
+    
+    recording = recordings_db[recording_id]
+    
+    if not recording.get("report") or not recording["report"].get("transcript"):
+        raise HTTPException(
+            status_code=404,
+            detail="Transcript not found"
+        )
+    
+    transcript = recording["report"]["transcript"]
+    
+    # Return as TXT file
+    from fastapi import Response
+    return Response(
+        content=transcript,
+        media_type="text/plain",
+        headers={
+            "Content-Disposition": f'attachment; filename="transcript_{recording_id}.txt"'
+        }
+    )
 
 # Root endpoint
 @app.get("/")

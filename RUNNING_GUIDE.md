@@ -1,216 +1,255 @@
-# AI销售教练系统 - 使用指南
-
-## 🚀 快速启动
-
-### Windows系统
-
-**方法1：使用PowerShell脚本（推荐）**
-```powershell
-.
-\start-all.ps1
-```
-
-**方法2：使用Batch脚本**
-```cmd
-start-all.bat
-```
-
-**停止服务**
-```cmd
-stop-all.bat
-```
-
-### Linux/macOS系统
-
-**启动服务**
-```bash
-chmod +x start-all.sh stop-all.sh
-./start-all.sh
-```
-
-**停止服务**
-```bash
-./stop-all.sh
-```
+# 运行指南
 
 ## 📋 系统要求
 
-- **Python** 3.8+ (推荐3.10+)
-- **Node.js** 18+ (推荐20+)
-- **npm** 或 **yarn** 包管理器
-- **内存**：至少4GB RAM
-- **磁盘空间**：至少5GB可用空间
+### 最低配置
+- CPU: 2核 2GHz+
+- 内存: 4GB RAM
+- 存储: 10GB 可用空间
+- 系统: Windows 10+, macOS 10.15+, Linux (CentOS 7+/Ubuntu 18.04+)
 
-## 🔧 手动安装与配置
-
-### 1. 安装后端依赖
-
-```bash
-# 创建虚拟环境
-python -m venv backend/venv
-
-# 激活虚拟环境
-# Windows
-b\ackend\venv\Scripts\activate.bat
-
-# Linux/macOS
-source backend/venv/bin/activate
-
-# 安装依赖
-pip install -r backend/requirements.txt
-```
-
-### 2. 安装前端依赖
-
-```bash
-cd frontend
-npm install
-cd ..
-```
-
-### 3. 手动启动服务
-
-#### 启动后端
-```bash
-# Windows
-backend/venv/Scripts/activate.bat
-python backend/main.py
-
-# Linux/macOS
-source backend/venv/bin/activate
-python backend/main.py
-```
-
-#### 启动前端
-```bash
-cd frontend
-npm run dev
-```
-
-## 🌐 访问地址
-
-- **前端界面**：http://localhost:3000
-- **后端API**：http://localhost:8000
-- **API文档**：http://localhost:8000/docs
-- **健康检查**：http://localhost:8000/health
-
-## 📝 系统功能
-
-### 主要功能
-
-1. **📁 录音上传**
-   - 支持MP3、WAV、M4A等格式
-   - 实时上传进度显示
-   - 文件大小限制：最大100MB
-
-2. **🤖 AI分析**
-   - 自动转录语音为文本
-   - 分析表达能力、内容完整度、逻辑结构
-   - 客户理解度和说服力评估
-   - 生成综合评分和改进建议
-
-3. **📊 报告查看**
-   - 交互式雷达图展示各维度评分
-   - 详细的优势分析和改进建议
-   - 历史记录对比和趋势分析
-
-4. **⚙️ 系统设置**
-   - API密钥配置（OpenAI、DeepSeek、Anthropic）
-   - 评分权重自定义
-   - 系统参数调整
-
-## 🛠️ 故障排除
-
-### 常见问题
-
-**1. 端口被占用**
-
-如果端口被占用，可以修改配置文件中的端口号：
-- 后端：修改`backend/config.py`中的`PORT`
-- 前端：修改`frontend/package.json`中的启动命令
-
-**2. 依赖安装失败**
-
-```bash
-# 清理并重新安装
-pip cache purge
-pip install -r backend/requirements.txt --no-cache-dir
-```
-
-**3. 后端启动失败**
-
-检查日志文件：
-```bash
-# Windows
-查看 logs\backend.log 和 logs\backend_error.log
-
-# Linux/macOS
-view logs/backend.log
-```
-
-**4. 前端页面无法访问**
-
-检查前端日志：
-```bash
-# Windows
-查看 logs\frontend.log 和 logs\frontend_error.log
-
-# Linux/macOS
-view logs/frontend.log
-```
-
-### 健康检查
-
-1. **检查后端状态**
-```bash
-curl http://localhost:8000/health
-```
-
-2. **检查前端状态**
-```bash
-curl http://localhost:3000
-```
-
-## 📁 目录结构
-
-```
-sales-ai-coach/
-├── backend/                 # 后端代码
-│   ├── main.py             # 主入口文件
-│   ├── requirements.txt    # Python依赖
-│   ├── venv/               # 虚拟环境
-│   ├── models.py           # 数据库模型
-│   ├── speech_analysis.py  # 语音分析模块
-│   └── ai_analyzer.py      # AI分析模块
-├── frontend/               # 前端代码
-│   ├── app/                # 应用页面
-│   ├── components/         # React组件
-│   ├── package.json        # Node.js依赖
-│   └── next.config.js      # Next.js配置
-├── logs/                   # 日志文件
-├── start-all.ps1           # Windows启动脚本（PowerShell）
-├── start-all.bat           # Windows启动脚本（Batch）
-├── start-all.sh            # Linux/macOS启动脚本
-├── stop-all.bat            # Windows停止脚本
-├── stop-all.sh             # Linux/macOS停止脚本
-└── RUNNING_GUIDE.md        # 使用指南
-```
-
-## 🔒 安全注意事项
-
-1. **API密钥**：请勿在公共仓库提交包含API密钥的配置文件
-2. **文件上传**：系统仅允许上传指定格式的音频文件
-3. **网络安全**：生产环境建议配置HTTPS和访问控制
-4. **数据备份**：定期备份重要数据和配置文件
-
-## 📞 技术支持
-
-如果遇到问题，请提供以下信息：
-1. 操作系统版本
-2. Python和Node.js版本
-3. 错误日志文件内容
-4. 重现步骤的详细描述
+### 推荐配置
+- CPU: 4核 3GHz+
+- 内存: 8GB RAM
+- 存储: 20GB SSD
+- 网络: 100Mbps 以上（首次使用需要下载模型）
 
 ---
 
-**🎉 祝您使用愉快！**
+## 🚀 部署方式
+
+### 1. 本地开发部署
+适合开发和测试使用，参考 `QUICK_START.md`。
+
+### 2. 生产环境部署
+
+#### 后端部署
+```bash
+# 1. 安装依赖
+cd backend
+pip install -r requirements.txt
+
+# 2. 使用 Gunicorn 部署（Linux/macOS）
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:8000 main:app
+
+# 3. Windows 环境使用 uvicorn
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+#### 前端部署
+```bash
+# 1. 构建生产版本
+cd frontend-vue
+npm install
+npm run build
+
+# 2. 部署 dist 目录到 Nginx 或其他静态服务器
+# Nginx 配置示例：
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    # 前端静态文件
+    location / {
+        root /path/to/frontend-vue/dist;
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # API 代理
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+---
+
+## ⚙️ 配置说明
+
+### 后端配置
+配置文件位于 `backend/config.py`：
+```python
+class Settings:
+    PROJECT_NAME = "AI Sales Coaching System"
+    VERSION = "2.0.0"
+    DATABASE_URL = "sqlite:///./sales_coach.db"
+    UPLOAD_DIR = "uploads"
+    MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200MB
+```
+
+### 前端配置
+配置文件位于 `frontend-vue/vite.config.js`：
+```javascript
+export default defineConfig({
+  server: {
+    port: 3002,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',  # 后端地址
+        changeOrigin: true
+      }
+    }
+  }
+})
+```
+
+### 评分权重配置
+可以在系统设置页面调整各维度的评分权重：
+- 表达质量: 默认 20%
+- 内容完整度: 默认 30%
+- 逻辑结构: 默认 20%
+- 客户理解度: 默认 20%
+- 说服力: 默认 10%
+
+---
+
+## 🔧 模型配置
+
+### 本地模型（默认）
+系统内置本地 Whisper Base 模型，无需 API 密钥即可使用：
+- 优点：数据本地处理，安全可靠，无需网络
+- 缺点：识别准确率略低于云端模型，占用系统资源
+
+### 云端模型（推荐）
+配置 API 密钥可以获得更好的分析效果：
+
+#### OpenAI API
+```
+API Key: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+支持 GPT-3.5-turbo、GPT-4 等模型，分析效果最佳。
+
+#### Claude API
+```
+API Key: sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+适合长文本分析，逻辑推理能力强。
+
+#### DeepSeek API
+```
+API Key: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+中文支持好，性价比高。
+
+---
+
+## 📊 数据管理
+
+### 数据存储位置
+- 数据库: `sales_coach.db`（SQLite 数据库文件）
+- 上传文件: `uploads/` 目录
+- 分析报告: `backend/reports/` 目录
+- 日志文件: `logs/` 目录
+
+### 数据备份
+定期备份以下文件即可完成数据备份：
+1. `sales_coach.db` - 数据库文件
+2. `uploads/` 目录 - 上传的录音文件
+3. `backend/reports/` 目录 - 分析报告
+
+### 数据迁移
+将备份文件复制到新环境的对应目录即可完成数据迁移。
+
+---
+
+## 🔒 安全建议
+
+### 生产环境安全
+1. 不要使用默认的 SQLite 数据库，建议切换到 PostgreSQL/MySQL
+2. 配置 HTTPS，使用 SSL 证书加密传输
+3. 开启身份认证，限制系统访问权限
+4. 定期备份数据，防止数据丢失
+5. 限制服务器端口对外暴露
+
+### 数据安全
+1. 录音文件和分析报告包含敏感信息，请妥善保管
+2. 不要将系统部署在公网环境，建议企业内部使用
+3. 定期清理过期数据，避免信息泄露
+
+---
+
+## 📈 性能优化
+
+### 硬件优化
+- 使用 SSD 存储可以大幅提升文件读写速度
+- 增加内存可以提升大模型运行效率
+- 多核 CPU 可以支持更多并发请求
+
+### 软件优化
+- 生产环境使用 Gunicorn/Uvicorn 多进程部署
+- 配置 Nginx 反向代理提升静态资源访问速度
+- 定期清理过期录音文件，释放存储空间
+- 对于大流量场景，建议使用 Redis 做缓存
+
+---
+
+## ❌ 故障排除
+
+### 后端相关问题
+
+#### 问题：启动后端提示 ModuleNotFoundError
+**解决方法：**
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+#### 问题：数据库报错 "table xxx has no column named xxx"
+**解决方法：**
+```bash
+# 备份数据后重新创建数据库
+mv sales_coach.db sales_coach.db.backup
+python -c "from database import engine; from models import Base; Base.metadata.create_all(bind=engine)"
+```
+
+#### 问题：分析速度特别慢
+**解决方法：**
+1. 首次使用需要下载模型，请耐心等待
+2. 增加系统内存，建议至少 8GB
+3. 配置云端 API 密钥，使用云端模型分析
+
+### 前端相关问题
+
+#### 问题：前端页面无法访问
+**解决方法：**
+1. 检查前端服务是否正常启动
+2. 确认端口 3002 没有被占用
+3. 检查防火墙设置是否允许访问 3002 端口
+
+#### 问题：前端请求后端失败
+**解决方法：**
+1. 检查后端服务是否正常启动
+2. 确认 `frontend-vue/vite.config.js` 中的代理地址配置正确
+3. 检查后端端口 8000 是否可以正常访问
+
+#### 问题：上传文件失败
+**解决方法：**
+1. 检查文件大小是否超过 200MB 限制
+2. 确认文件格式为 MP3/WAV/M4A
+3. 检查 `uploads` 目录是否有写入权限
+
+### 其他问题
+
+#### 问题：语音识别准确率低
+**解决方法：**
+1. 录音质量差，建议在安静环境下录音
+2. 语速过快或口音过重
+3. 配置云端 API 可以提升识别准确率
+
+#### 问题：评分结果不符合预期
+**解决方法：**
+1. 在系统设置页面调整评分权重
+2. 提供更多行业语料对模型进行微调
+3. 联系我们定制行业专属模型
+
+---
+
+## 📞 技术支持
+如果遇到无法解决的问题，请提供以下信息：
+1. 操作系统版本
+2. Python 和 Node.js 版本
+3. 错误截图和完整日志
+4. 复现问题的操作步骤

@@ -29,7 +29,7 @@
                 OpenAI API Key
               </label>
               <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于GPT模型分析
+                <a href="https://platform.openai.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
               </span>
             </div>
             <input
@@ -38,6 +38,9 @@
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              用于GPT-3.5/GPT-4模型进行智能分析，分析质量最高，适合对准确度要求高的场景
+            </p>
           </div>
 
           <div class="space-y-3">
@@ -214,6 +217,21 @@
             <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">
               建议总权重保持为100%以确保评分准确
             </p>
+          </div>
+
+          <div class="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📊 评分计算逻辑</h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mb-2">
+              系统采用加权平均法计算最终得分，计算公式为：
+            </p>
+            <p class="text-xs font-mono bg-white dark:bg-slate-800 p-2 rounded mb-2">
+              总分 = (表达质量得分 × 表达权重%) + (内容完整度得分 × 内容权重%) + (逻辑结构得分 × 逻辑权重%) + (客户理解度得分 × 客户权重%) + (说服力得分 × 说服力权重%)
+            </p>
+            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+              <p>• 各维度得分范围：0-100分</p>
+              <p>• 最终总分范围：0-100分</p>
+              <p>• 80分以上为优秀，60-80分为良好，60分以下需要改进</p>
+            </div>
           </div>
         </div>
       </div>

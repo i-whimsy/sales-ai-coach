@@ -110,8 +110,39 @@ export default defineConfig({
 
 ### 本地模型（默认）
 系统内置本地 Whisper Base 模型，无需 API 密钥即可使用：
-- 优点：数据本地处理，安全可靠，无需网络
-- 缺点：识别准确率略低于云端模型，占用系统资源
+- **优点**：数据本地处理，安全可靠，无需网络
+- **缺点**：识别准确率略低于云端模型，占用系统资源
+
+#### 本地模型安装方法
+系统会在首次运行时自动下载 Whisper Base 模型，也可以手动安装：
+```bash
+# 安装 whisper 依赖
+pip install openai-whisper
+
+# 手动下载模型（可选）
+# 模型会自动下载到以下路径：
+# Windows: C:\Users\用户名\.cache\whisper\base.pt
+# macOS: ~/Library/Caches/whisper/base.pt
+# Linux: ~/.cache/whisper/base.pt
+```
+
+#### 模型选择建议
+| 模型大小 | 所需显存 | 识别速度 | 准确率 | 适用场景 |
+|---------|---------|----------|--------|----------|
+| tiny    | <1GB    | 极快     | 一般   | 实时语音识别，低配置机器 |
+| base    | <1GB    | 快       | 良好   | 通用场景，默认选择 |
+| small   | 2GB     | 中等     | 优秀   | 对准确率要求较高 |
+| medium  | 5GB     | 慢       | 非常好 | 专业级分析，长录音 |
+| large   | 10GB    | 极慢     | 最佳   | 企业级高精度需求 |
+
+#### 切换模型版本
+修改 `backend/speech_analysis.py` 中的模型名称：
+```python
+# 默认使用 base 模型
+model = whisper.load_model("base")
+# 切换为 small 模型
+# model = whisper.load_model("small")
+```
 
 ### 云端模型（推荐）
 配置 API 密钥可以获得更好的分析效果：

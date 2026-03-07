@@ -150,9 +150,7 @@ MIT License
 
 ---
 
-# ByteDance OpenClaw AI Sales Coaching System
-
 ## 🚀 项目介绍
-AI 销售教练系统是由 ByteDance OpenClaw 团队自主研发的智能销售能力提升平台，基于 FastAPI + Vue 3 技术栈构建，支持语音识别、多维度智能分析、自动评分等核心功能。
+AI 销售教练系统是由 OpenClaw 自主研发的智能销售能力提升平台，基于 FastAPI + Vue 3 技术栈构建，支持语音识别、多维度智能分析、自动评分等核心功能。
 
 本项目完全开源，欢迎 Star 和 Fork！

@@ -80,17 +80,19 @@ class AIModel(Base):
     __tablename__ = "ai_models"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)  # 模型名称，如"字节跳动Whisper"
-    type = Column(String, nullable=False)  # 类型: online/local
-    category = Column(String, nullable=False)  # 分类: ASR/NLP/情感分析/声纹识别等
-    provider = Column(String, nullable=False)  # 提供商: OpenAI/字节跳动/本地等
-    api_url = Column(String, nullable=True)  # 在线模型API地址
-    api_key = Column(String, nullable=True)  # 在线模型API密钥
-    model_name = Column(String, nullable=True)  # 模型名称，如"whisper-1"
-    local_path = Column(String, nullable=True)  # 本地模型路径
+    name = Column(String, index=True, nullable=False)  # 模型名称，如"OpenAI GPT-4o"
+    # 类型: api(API模型), local_service(本地服务如Ollama), local_program(本地程序如faster-whisper)
+    type = Column(String, nullable=False, default="api")
+    category = Column(String, nullable=False)  # 分类: ASR/NLP/EMOTION/VOICEPRINT/INTENT/SCORE
+    provider = Column(String, nullable=True)  # 提供商: OpenAI/DeepSeek/Ollama/本地等
+    api_url = Column(String, nullable=True)  # API地址或服务地址
+    api_key = Column(String, nullable=True)  # API密钥
+    model_name = Column(String, nullable=True)  # 模型标识，如"gpt-4o", "llama3", "base"
+    local_path = Column(String, nullable=True)  # 本地程序路径
+    command_args = Column(String, nullable=True)  # 本地程序运行参数
     status = Column(String, default="inactive")  # 状态: active/inactive/error
     is_default = Column(Boolean, default=False)  # 是否为该分类默认模型
-    config = Column(JSON, nullable=True)  # 其他配置参数
+    config = Column(String, nullable=True)  # 其他配置参数(JSON字符串)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

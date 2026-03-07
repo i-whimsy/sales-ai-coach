@@ -72,3 +72,19 @@ class Comparison(Base):
     
     def __repr__(self):
         return f"<Comparison(id={self.id}, name={self.name}, recording1={self.recording1_id}, recording2={self.recording2_id})>"
+
+
+class ModelPreference(Base):
+    """Model for storing user model preferences"""
+    __tablename__ = "model_preferences"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    scene = Column(String, nullable=False, index=True)  # 场景名称
+    task_type = Column(String, nullable=False, index=True)  # 任务类型
+    selected_model_id = Column(String, nullable=True)  # 用户选择的模型ID
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<ModelPreference(scene={self.scene}, task={self.task_type}, model={self.selected_model_id})>"

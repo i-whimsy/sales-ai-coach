@@ -116,6 +116,78 @@
       </div>
     </div>
 
+    <!-- Model Selection -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">模型选择配置</h2>
+      </div>
+      <div class="card-content">
+        <div class="space-y-6">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-medium text-slate-900 dark:text-white">
+                语音转文字模型
+              </label>
+              <span class="text-xs text-slate-500 dark:text-slate-500">
+                用于将语音转换为文字
+              </span>
+            </div>
+            <select
+              v-model="selectedModels.asr"
+              @change="setModelPreference('asr', selectedModels.asr)"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
+            >
+              <option value="">自动选择（推荐）</option>
+              <option
+                v-for="model in availableModels.asr"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.display_name }}
+                <template v-if="!model.available">（不可用）</template>
+              </option>
+            </select>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-medium text-slate-900 dark:text-white">
+                文本分析模型
+              </label>
+              <span class="text-xs text-slate-500 dark:text-slate-500">
+                用于分析销售录音内容
+              </span>
+            </div>
+            <select
+              v-model="selectedModels.nlp"
+              @change="setModelPreference('nlp', selectedModels.nlp)"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
+            >
+              <option value="">自动选择（推荐）</option>
+              <option
+                v-for="model in availableModels.nlp"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.display_name }}
+                <template v-if="!model.available">（不可用）</template>
+              </option>
+            </select>
+          </div>
+
+          <div class="mt-4 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+            <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">💡 模型选择建议</h3>
+            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+              <p>• 自动选择：优先使用本地模型（免费、无网络），不可用时回退到在线模型</p>
+              <p>• 本地模型：无需API密钥，完全免费，数据不外泄</p>
+              <p>• 在线模型：分析质量更高，但需要API密钥，可能产生费用</p>
+              <p>• 优先本地：建议优先选择本地模型，对质量不满意再换在线模型</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Scoring Weights -->
     <div class="card">
       <div class="card-header">
@@ -349,6 +421,16 @@ const form = ref({
   persuasion_weight: 10
 })
 
+const availableModels = ref({
+  asr: [],
+  nlp: []
+})
+
+const selectedModels = ref({
+  asr: '',
+  nlp: ''
+})
+
 const loadConfig = async () => {
   try {
     // Load API config
@@ -367,6 +449,40 @@ const loadConfig = async () => {
     form.value.persuasion_weight = Math.round(scoringResponse.data.persuasion_weight * 100)
   } catch (error) {
     console.error('Failed to load config:', error)
+  }
+}
+
+const loadModels = async () => {
+  try {
+    // Load ASR models
+    const asrResponse = await axios.get('/api/v1/models', {
+      params: { scene: 'speech_analysis', task_type: 'asr' }
+    })
+    availableModels.value.asr = asrResponse.data.models
+    selectedModels.value.asr = asrResponse.data.selected_model_id || ''
+    
+    // Load NLP models
+    const nlpResponse = await axios.get('/api/v1/models', {
+      params: { scene: 'speech_analysis', task_type: 'nlp' }
+    })
+    availableModels.value.nlp = nlpResponse.data.models
+    selectedModels.value.nlp = nlpResponse.data.selected_model_id || ''
+  } catch (error) {
+    console.error('Failed to load models:', error)
+  }
+}
+
+const setModelPreference = async (taskType, modelId) => {
+  try {
+    await axios.post('/api/v1/models/preference', null, {
+      params: {
+        scene: 'speech_analysis',
+        task_type: taskType,
+        model_id: modelId
+      }
+    })
+  } catch (error) {
+    console.error('Failed to set model preference:', error)
   }
 }
 
@@ -389,6 +505,9 @@ const saveSettings = async () => {
       persuasion_weight: form.value.persuasion_weight / 100
     })
     
+    // Reload models after API key change
+    await loadModels()
+    
     alert('设置已保存！')
   } catch (error) {
     console.error('Failed to save settings:', error)
@@ -408,6 +527,7 @@ const totalWeight = computed(() => {
 
 onMounted(() => {
   loadConfig()
+  loadModels()
 })
 </script>
 

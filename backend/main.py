@@ -21,6 +21,8 @@ from database import get_db, engine
 import models
 import speech_analysis
 import ai_analyzer
+from model_manager import get_model_manager
+from models_config import get_model_config
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -746,3 +748,124 @@ async def rename_recording(recording_id: int, name_data: Dict[str, str], db: Ses
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ========== 模型管理API ==========
+
+@app.get("/api/v1/models")
+async def list_models(
+    scene: str = "speech_analysis",
+    task_type: str = "asr",
+    db: Session = Depends(get_db)
+):
+    """获取可用模型列表"""
+    # 获取API配置
+    api_config = get_api_config_dict(db)
+    model_manager = get_model_manager(api_config)
+    
+    models = model_manager.get_models_for_ui(scene=scene, task_type=task_type)
+    
+    # 获取用户偏好
+    preference = db.query(models.ModelPreference).filter(
+        models.ModelPreference.scene == scene,
+        models.ModelPreference.task_type == task_type,
+        models.ModelPreference.is_active == True
+    ).first()
+    
+    return {
+        "models": models,
+        "selected_model_id": preference.selected_model_id if preference else None
+    }
+
+
+@app.get("/api/v1/models/all")
+async def list_all_models():
+    """获取所有模型配置（用于管理）"""
+    from models_config import get_all_models
+    all_models = get_all_models()
+    return {
+        "models": [model.to_dict() for model in all_models]
+    }
+
+
+@app.post("/api/v1/models/preference")
+async def set_model_preference(
+    scene: str,
+    task_type: str,
+    model_id: str,
+    db: Session = Depends(get_db)
+):
+    """设置模型偏好"""
+    # 验证模型存在
+    model_config = get_model_config(model_id)
+    if not model_config:
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    
+    # 停用现有偏好
+    existing = db.query(models.ModelPreference).filter(
+        models.ModelPreference.scene == scene,
+        models.ModelPreference.task_type == task_type
+    ).all()
+    for pref in existing:
+        pref.is_active = False
+    
+    # 创建新偏好
+    preference = models.ModelPreference(
+        scene=scene,
+        task_type=task_type,
+        selected_model_id=model_id,
+        is_active=True
+    )
+    
+    db.add(preference)
+    db.commit()
+    db.refresh(preference)
+    
+    return {"success": True, "preference": {
+        "scene": preference.scene,
+        "task_type": preference.task_type,
+        "selected_model_id": preference.selected_model_id
+    }}
+
+
+@app.get("/api/v1/models/preference")
+async def get_model_preference(
+    scene: str,
+    task_type: str,
+    db: Session = Depends(get_db)
+):
+    """获取模型偏好"""
+    preference = db.query(models.ModelPreference).filter(
+        models.ModelPreference.scene == scene,
+        models.ModelPreference.task_type == task_type,
+        models.ModelPreference.is_active == True
+    ).first()
+    
+    if preference:
+        return {
+            "scene": preference.scene,
+            "task_type": preference.task_type,
+            "selected_model_id": preference.selected_model_id
+        }
+    else:
+        return {
+            "scene": scene,
+            "task_type": task_type,
+            "selected_model_id": None
+        }
+
+
+def get_api_config_dict(db: Session) -> Dict[str, str]:
+    """获取API配置字典"""
+    api_config = db.query(models.ApiKeyConfig).first()
+    config_dict = {}
+    if api_config:
+        if api_config.openai_api_key:
+            config_dict["openai_api_key"] = api_config.openai_api_key
+        if api_config.deepseek_api_key:
+            config_dict["deepseek_api_key"] = api_config.deepseek_api_key
+        if api_config.claude_api_key:
+            config_dict["claude_api_key"] = api_config.claude_api_key
+        if api_config.whisper_api_key:
+            config_dict["whisper_api_key"] = api_config.whisper_api_key
+    return config_dict

@@ -59,28 +59,28 @@ try {
 Write-Host "`nStarting frontend server..." -ForegroundColor Yellow
 
 # Check frontend dependencies
-if (-not (Test-Path "frontend\node_modules")) {
+if (-not (Test-Path "frontend-vue\node_modules")) {
     Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
-    Push-Location frontend
+    Push-Location frontend-vue
     npm install
     Pop-Location
     Write-Host "Frontend dependencies installation completed" -ForegroundColor Green
 }
 
 # Start frontend
-$frontendProcess = Start-Process -FilePath "cmd" -ArgumentList "/c npm run dev" -WorkingDirectory (Join-Path $PWD.Path "frontend") -RedirectStandardOutput "logs\frontend.log" -RedirectStandardError "logs\frontend_error.log" -PassThru -WindowStyle Hidden
-Write-Host "Frontend server started (Port: 3000, PID: $($frontendProcess.Id))" -ForegroundColor Green
+$frontendProcess = Start-Process -FilePath "cmd" -ArgumentList "/c npm run dev" -WorkingDirectory (Join-Path $PWD.Path "frontend-vue") -RedirectStandardOutput "logs\frontend.log" -RedirectStandardError "logs\frontend_error.log" -PassThru -WindowStyle Hidden
+Write-Host "Frontend server started (Port: 3002, PID: $($frontendProcess.Id))" -ForegroundColor Green
 
 # Wait for frontend to start
 Start-Sleep -Seconds 5
 
 # Start browser
 Write-Host "`nStarting browser..." -ForegroundColor Yellow
-Start-Process "http://localhost:3000"
+Start-Process "http://localhost:3002"
 
 Write-Host "`nAI Sales Coach System startup completed!" -ForegroundColor Green
 Write-Host "System access addresses:" -ForegroundColor Cyan
-Write-Host "   Frontend interface: http://localhost:3000" -ForegroundColor White
+Write-Host "   Frontend interface: http://localhost:3002" -ForegroundColor White
 Write-Host "   Backend API:       http://localhost:8000" -ForegroundColor White
 Write-Host "`nLog file locations:" -ForegroundColor Cyan
 Write-Host "   Frontend log: logs/frontend.log" -ForegroundColor White

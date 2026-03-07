@@ -199,10 +199,18 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
         # Get selected model for this recording
         selected_model = None
         if recording.model_id:
-            selected_model = db.query(models.AIModel).filter(
-                models.AIModel.id == recording.model_id,
-                models.AIModel.status == "active"
+            # Check if the model exists and is active
+            model_check = db.query(models.AIModel).filter(
+                models.AIModel.id == recording.model_id
             ).first()
+            
+            if not model_check:
+                raise HTTPException(status_code=400, detail="选择的模型不存在")
+            
+            if model_check.status != "active":
+                raise HTTPException(status_code=400, detail=f"模型 '{model_check.name}' 未激活，请先在模型管理中激活")
+            
+            selected_model = model_check
         
         model_info = "默认Whisper模型"
         if selected_model:

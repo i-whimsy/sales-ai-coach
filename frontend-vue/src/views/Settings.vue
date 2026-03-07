@@ -39,7 +39,7 @@
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              用于GPT-3.5/GPT-4模型进行智能分析，分析质量最高，适合对准确度要求高的场景
+              API地址: https://api.openai.com/v1/chat/completions | 支持模型: GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo
             </p>
           </div>
 
@@ -49,15 +49,18 @@
                 Claude API Key
               </label>
               <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于Claude模型分析
+                <a href="https://www.anthropic.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
               </span>
             </div>
             <input
               v-model="form.claude_api_key"
               type="text"
-              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              API地址: https://api.anthropic.com/v1/messages | 用于Claude-3.5-Sonnet/Claude-3-Opus模型分析，长文本处理能力强
+            </p>
           </div>
 
           <div class="space-y-3">
@@ -66,7 +69,7 @@
                 DeepSeek API Key
               </label>
               <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于DeepSeek模型分析
+                <a href="https://www.deepseek.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
               </span>
             </div>
             <input
@@ -75,6 +78,9 @@
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              API地址: https://api.deepseek.com/v1/chat/completions | 用于DeepSeek-V3模型分析，中文支持好，性价比高
+            </p>
           </div>
 
           <div class="space-y-3">
@@ -83,7 +89,7 @@
                 Whisper API Key
               </label>
               <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于Whisper API服务
+                <a href="https://openai.com/research/whisper" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
               </span>
             </div>
             <input
@@ -92,6 +98,19 @@
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              API地址: https://api.openai.com/v1/audio/transcriptions | 支持模型: Whisper-1, Whisper-Large-V3
+            </p>
+          </div>
+
+          <div class="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+            <h3 class="text-sm font-medium text-green-800 dark:text-green-300 mb-2">📡 API配置说明</h3>
+            <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+              <p><strong>配置优先级：</strong>系统会自动选择已配置的最优模型进行分析</p>
+              <p><strong>本地模式：</strong>不配置任何API密钥时，使用本地Whisper Base模型（无需网络）</p>
+              <p><strong>安全提示：</strong>所有API密钥仅存储在本地SQLite数据库，不会上传到任何第三方</p>
+              <p><strong>自定义配置：</strong>如需使用其他兼容OpenAI格式的API服务，可使用OpenAI API Key配置，并在后端修改API地址</p>
+            </div>
           </div>
         </div>
       </div>

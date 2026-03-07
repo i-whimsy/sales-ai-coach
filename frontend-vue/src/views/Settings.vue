@@ -6,111 +6,16 @@
           系统设置
         </h1>
         <p class="mt-2 text-slate-600 dark:text-slate-400">
-          配置API密钥和评分参数
+          配置评分权重和分析工作流
         </p>
       </div>
-      <RouterLink to="/models" class="btn btn-secondary">
-        前往模型管理
-      </RouterLink>
-    </div>
-
-    <!-- API Keys -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">API密钥配置</h2>
-      </div>
-      <div class="card-content">
-        <div class="space-y-6">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                OpenAI API Key
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                <a href="https://platform.openai.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
-              </span>
-            </div>
-            <input
-              v-model="form.openai_api_key"
-              type="password"
-              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            />
-            <p class="text-xs text-slate-500 dark:text-slate-500">
-              用于GPT-4o等OpenAI模型
-            </p>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                Claude API Key
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                <a href="https://www.anthropic.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
-              </span>
-            </div>
-            <input
-              v-model="form.claude_api_key"
-              type="password"
-              placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            />
-            <p class="text-xs text-slate-500 dark:text-slate-500">
-              用于Claude模型，长文本处理能力强
-            </p>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                DeepSeek API Key
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                <a href="https://www.deepseek.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
-              </span>
-            </div>
-            <input
-              v-model="form.deepseek_api_key"
-              type="password"
-              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            />
-            <p class="text-xs text-slate-500 dark:text-slate-500">
-              用于DeepSeek模型，中文支持好，性价比高
-            </p>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                Whisper API Key
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                <a href="https://openai.com/research/whisper" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">官方网站</a>
-              </span>
-            </div>
-            <input
-              v-model="form.whisper_api_key"
-              type="password"
-              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            />
-            <p class="text-xs text-slate-500 dark:text-slate-500">
-              用于Whisper语音识别模型
-            </p>
-          </div>
-
-          <div class="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <h3 class="text-sm font-medium text-green-800 dark:text-green-300 mb-2">📡 配置说明</h3>
-            <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <p>• <strong>模型管理：</strong>请前往 <RouterLink to="/models" class="text-blue-600 hover:underline">模型管理页面</RouterLink> 激活和管理AI模型</p>
-              <p>• <strong>API密钥：</strong>配置在对应模型的详情页中，输入密钥后模型会自动激活</p>
-              <p>• <strong>本地模式：</strong>也可使用本地模型（无需API密钥），在模型管理中下载安装</p>
-              <p>• <strong>安全提示：</strong>所有API密钥仅存储在本地数据库，不会上传到任何第三方</p>
-            </div>
-          </div>
-        </div>
+      <div class="flex gap-2">
+        <RouterLink to="/models" class="btn btn-secondary">
+          模型管理
+        </RouterLink>
+        <RouterLink to="/workflow" class="btn btn-secondary">
+          工作流配置
+        </RouterLink>
       </div>
     </div>
 
@@ -157,7 +62,7 @@
               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              评估内容完整性、专业性、价值传递
+              评估内容完整性，专业性、价值传递
             </p>
           </div>
 
@@ -241,6 +146,42 @@
       </div>
     </div>
 
+    <!-- Analysis Workflow -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">分析工作流</h2>
+      </div>
+      <div class="card-content">
+        <div class="space-y-4">
+          <div v-for="task in workflowTasks" :key="task.name" 
+            class="p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-medium text-slate-900 dark:text-white">{{ task.name }}</h3>
+                <p class="text-xs text-slate-500">{{ task.description }}</p>
+              </div>
+              <select
+                v-model="task.model_id"
+                @change="updateTaskModel(task.name, task.model_id)"
+                class="w-48 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+              >
+                <option :value="null">默认模型</option>
+                <option v-for="model in activeModels" :key="model.id" :value="model.id">
+                  {{ model.name }}
+                </option>
+              </select>
+            </div>
+            <div v-if="task.model_id" class="text-xs text-green-600">
+              ✓ 将使用 {{ getModelName(task.model_id) }} 进行分析
+            </div>
+            <div v-else class="text-xs text-slate-500">
+              将使用系统默认模型
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Save Button -->
     <div class="flex justify-end gap-3">
       <button @click="resetDefaults" class="btn btn-secondary">
@@ -261,16 +202,23 @@ import axios from 'axios'
 const router = useRouter()
 
 const form = ref({
-  openai_api_key: '',
-  claude_api_key: '',
-  deepseek_api_key: '',
-  whisper_api_key: '',
   expression_weight: 0.20,
   content_weight: 0.30,
   logic_weight: 0.20,
   customer_weight: 0.20,
   persuasion_weight: 0.10
 })
+
+const workflowTasks = ref([
+  { name: '语音转写', description: '将音频转换为文字', model_id: null },
+  { name: '内容分析', description: '分析内容完整性和逻辑', model_id: null },
+  { name: '情感识别', description: '识别语音情感倾向', model_id: null },
+  { name: '说话人识别', description: '识别说话人身份', model_id: null },
+  { name: '意图识别', description: '识别客户意图', model_id: null },
+  { name: '质量评分', description: '综合评分', model_id: null }
+])
+
+const activeModels = ref([])
 
 const totalWeight = computed(() => {
   return Math.round(
@@ -284,17 +232,7 @@ const totalWeight = computed(() => {
 
 const fetchSettings = async () => {
   try {
-    const [apiConfig, scoringConfig] = await Promise.all([
-      axios.get('/api/v1/api-config'),
-      axios.get('/api/v1/scoring-config')
-    ])
-    
-    if (apiConfig.data) {
-      form.value.openai_api_key = apiConfig.data.openai_api_key || ''
-      form.value.claude_api_key = apiConfig.data.claude_api_key || ''
-      form.value.deepseek_api_key = apiConfig.data.deepseek_api_key || ''
-      form.value.whisper_api_key = apiConfig.data.whisper_api_key || ''
-    }
+    const scoringConfig = await axios.get('/api/v1/scoring-config')
     
     if (scoringConfig.data) {
       form.value.expression_weight = scoringConfig.data.expression_weight || 0.20
@@ -303,8 +241,38 @@ const fetchSettings = async () => {
       form.value.customer_weight = scoringConfig.data.customer_weight || 0.20
       form.value.persuasion_weight = scoringConfig.data.persuasion_weight || 0.10
     }
+    
+    // Fetch task configurations
+    const tasksResponse = await axios.get('/api/v1/tasks')
+    if (tasksResponse.data.tasks) {
+      tasksResponse.data.tasks.forEach(task => {
+        const wfTask = workflowTasks.value.find(t => t.name === task.task_name)
+        if (wfTask && task.default_model_id) {
+          wfTask.model_id = task.default_model_id
+        }
+      })
+    }
+    
+    // Fetch active models
+    const modelsResponse = await axios.get('/api/v1/models')
+    activeModels.value = (modelsResponse.data.models || []).filter(m => m.status === 'active')
   } catch (error) {
     console.error('Failed to fetch settings:', error)
+  }
+}
+
+const getModelName = (modelId) => {
+  const model = activeModels.value.find(m => m.id === modelId)
+  return model ? model.name : '未知模型'
+}
+
+const updateTaskModel = async (taskName, modelId) => {
+  try {
+    await axios.put(`/api/v1/tasks/${taskName}`, {
+      default_model_id: modelId
+    })
+  } catch (error) {
+    console.error('Failed to update task model:', error)
   }
 }
 
@@ -315,13 +283,6 @@ const saveSettings = async () => {
   }
   
   try {
-    await axios.put('/api/v1/api-config', {
-      openai_api_key: form.value.openai_api_key,
-      claude_api_key: form.value.claude_api_key,
-      deepseek_api_key: form.value.deepseek_api_key,
-      whisper_api_key: form.value.whisper_api_key
-    })
-    
     await axios.put('/api/v1/scoring-config', {
       expression_weight: form.value.expression_weight,
       content_weight: form.value.content_weight,

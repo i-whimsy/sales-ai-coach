@@ -6,14 +6,12 @@
           系统设置
         </h1>
         <p class="mt-2 text-slate-600 dark:text-slate-400">
-          配置API密钥和分析参数
+          配置API密钥和评分参数
         </p>
       </div>
-      <div>
-        <button @click="saveSettings" class="btn btn-primary">
-          保存设置
-        </button>
-      </div>
+      <RouterLink to="/models" class="btn btn-secondary">
+        前往模型管理
+      </RouterLink>
     </div>
 
     <!-- API Keys -->
@@ -34,12 +32,12 @@
             </div>
             <input
               v-model="form.openai_api_key"
-              type="text"
+              type="password"
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              API地址: https://api.openai.com/v1/chat/completions | 支持模型: GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo
+              用于GPT-4o等OpenAI模型
             </p>
           </div>
 
@@ -54,12 +52,12 @@
             </div>
             <input
               v-model="form.claude_api_key"
-              type="text"
+              type="password"
               placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              API地址: https://api.anthropic.com/v1/messages | 用于Claude-3.5-Sonnet/Claude-3-Opus模型分析，长文本处理能力强
+              用于Claude模型，长文本处理能力强
             </p>
           </div>
 
@@ -74,12 +72,12 @@
             </div>
             <input
               v-model="form.deepseek_api_key"
-              type="text"
+              type="password"
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              API地址: https://api.deepseek.com/v1/chat/completions | 用于DeepSeek-V3模型分析，中文支持好，性价比高
+              用于DeepSeek模型，中文支持好，性价比高
             </p>
           </div>
 
@@ -94,94 +92,22 @@
             </div>
             <input
               v-model="form.whisper_api_key"
-              type="text"
+              type="password"
               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
             />
             <p class="text-xs text-slate-500 dark:text-slate-500">
-              API地址: https://api.openai.com/v1/audio/transcriptions | 支持模型: Whisper-1, Whisper-Large-V3
+              用于Whisper语音识别模型
             </p>
           </div>
 
           <div class="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <h3 class="text-sm font-medium text-green-800 dark:text-green-300 mb-2">📡 API配置说明</h3>
+            <h3 class="text-sm font-medium text-green-800 dark:text-green-300 mb-2">📡 配置说明</h3>
             <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <p><strong>配置优先级：</strong>系统会自动选择已配置的最优模型进行分析</p>
-              <p><strong>本地模式：</strong>不配置任何API密钥时，使用本地Whisper Base模型（无需网络）</p>
-              <p><strong>安全提示：</strong>所有API密钥仅存储在本地SQLite数据库，不会上传到任何第三方</p>
-              <p><strong>自定义配置：</strong>如需使用其他兼容OpenAI格式的API服务，可使用OpenAI API Key配置，并在后端修改API地址</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Model Selection -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">模型选择配置</h2>
-      </div>
-      <div class="card-content">
-        <div class="space-y-6">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                语音转文字模型
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于将语音转换为文字
-              </span>
-            </div>
-            <select
-              v-model="selectedModels.asr"
-              @change="setModelPreference('asr', selectedModels.asr)"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            >
-              <option value="">自动选择（推荐）</option>
-              <option
-                v-for="model in availableModels.asr"
-                :key="model.id"
-                :value="model.id"
-              >
-                {{ model.display_name }}
-                <template v-if="!model.available">（不可用）</template>
-              </option>
-            </select>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-900 dark:text-white">
-                文本分析模型
-              </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                用于分析销售录音内容
-              </span>
-            </div>
-            <select
-              v-model="selectedModels.nlp"
-              @change="setModelPreference('nlp', selectedModels.nlp)"
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white"
-            >
-              <option value="">自动选择（推荐）</option>
-              <option
-                v-for="model in availableModels.nlp"
-                :key="model.id"
-                :value="model.id"
-              >
-                {{ model.display_name }}
-                <template v-if="!model.available">（不可用）</template>
-              </option>
-            </select>
-          </div>
-
-          <div class="mt-4 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-            <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">💡 模型选择建议</h3>
-            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-              <p>• 自动选择：优先使用本地模型（免费、无网络），不可用时回退到在线模型</p>
-              <p>• 本地模型：无需API密钥，完全免费，数据不外泄</p>
-              <p>• 在线模型：分析质量更高，但需要API密钥，可能产生费用</p>
-              <p>• 优先本地：建议优先选择本地模型，对质量不满意再换在线模型</p>
+              <p>• <strong>模型管理：</strong>请前往 <RouterLink to="/models" class="text-blue-600 hover:underline">模型管理页面</RouterLink> 激活和管理AI模型</p>
+              <p>• <strong>API密钥：</strong>配置在对应模型的详情页中，输入密钥后模型会自动激活</p>
+              <p>• <strong>本地模式：</strong>也可使用本地模型（无需API密钥），在模型管理中下载安装</p>
+              <p>• <strong>安全提示：</strong>所有API密钥仅存储在本地数据库，不会上传到任何第三方</p>
             </div>
           </div>
         </div>
@@ -198,341 +124,228 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-sm font-medium text-slate-900 dark:text-white">
-                表达质量权重: {{ form.expression_weight }}%
+                表达质量权重
               </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                当前占比
-              </span>
+              <span class="text-sm text-slate-600 dark:text-slate-400">{{ form.expression_weight * 100 }}%</span>
             </div>
             <input
               v-model.number="form.expression_weight"
               type="range"
               min="0"
-              max="100"
-              step="1"
-              class="w-full"
+              max="1"
+              step="0.05"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              评估语速、停顿、流畅度等表达技巧
+            </p>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-sm font-medium text-slate-900 dark:text-white">
-                内容完整度权重: {{ form.content_weight }}%
+                内容质量权重
               </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                当前占比
-              </span>
+              <span class="text-sm text-slate-600 dark:text-slate-400">{{ form.content_weight * 100 }}%</span>
             </div>
             <input
               v-model.number="form.content_weight"
               type="range"
               min="0"
-              max="100"
-              step="1"
-              class="w-full"
+              max="1"
+              step="0.05"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              评估内容完整性、专业性、价值传递
+            </p>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-sm font-medium text-slate-900 dark:text-white">
-                逻辑结构权重: {{ form.logic_weight }}%
+                逻辑结构权重
               </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                当前占比
-              </span>
+              <span class="text-sm text-slate-600 dark:text-slate-400">{{ form.logic_weight * 100 }}%</span>
             </div>
             <input
               v-model.number="form.logic_weight"
               type="range"
               min="0"
-              max="100"
-              step="1"
-              class="w-full"
+              max="1"
+              step="0.05"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              评估讲解逻辑、层次结构、说服力
+            </p>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-sm font-medium text-slate-900 dark:text-white">
-                客户理解度权重: {{ form.customer_weight }}%
+                客户理解权重
               </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                当前占比
-              </span>
+              <span class="text-sm text-slate-600 dark:text-slate-400">{{ form.customer_weight * 100 }}%</span>
             </div>
             <input
               v-model.number="form.customer_weight"
               type="range"
               min="0"
-              max="100"
-              step="1"
-              class="w-full"
+              max="1"
+              step="0.05"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              评估对客户需求的理解程度
+            </p>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="text-sm font-medium text-slate-900 dark:text-white">
-                说服力权重: {{ form.persuasion_weight }}%
+                说服力权重
               </label>
-              <span class="text-xs text-slate-500 dark:text-slate-500">
-                当前占比
-              </span>
+              <span class="text-sm text-slate-600 dark:text-slate-400">{{ form.persuasion_weight * 100 }}%</span>
             </div>
             <input
               v-model.number="form.persuasion_weight"
               type="range"
               min="0"
-              max="100"
-              step="1"
-              class="w-full"
+              max="1"
+              step="0.05"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
+            <p class="text-xs text-slate-500 dark:text-slate-500">
+              评估销售说服技巧、价值表达
+            </p>
           </div>
 
-          <div class="mt-6 p-3 rounded-lg bg-slate-100 dark:bg-slate-900/50">
-            <div class="flex items-center justify-between">
+          <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-4">
               <span class="text-sm font-medium text-slate-900 dark:text-white">
-                总权重合计: {{ totalWeight }}%
+                总权重
               </span>
-              <span
-                class="text-xs font-medium px-2 py-1 rounded-full"
-                :class="{
-                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300': totalWeight === 100,
-                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': totalWeight !== 100
-                }"
+              <span 
+                :class="totalWeight === 100 ? 'text-green-600' : 'text-red-600'"
+                class="text-sm font-bold"
               >
-                {{ totalWeight === 100 ? '✅ 比例均衡' : '⚠️ 比例失衡' }}
+                {{ totalWeight }}%
               </span>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">
-              建议总权重保持为100%以确保评分准确
-            </p>
-          </div>
-
-          <div class="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📊 总分计算逻辑</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mb-2">
-              系统采用加权平均法计算最终得分，计算公式为：
-            </p>
-            <p class="text-xs font-mono bg-white dark:bg-slate-800 p-2 rounded mb-2">
-              总分 = (表达质量得分 × 表达权重%) + (内容完整度得分 × 内容权重%) + (逻辑结构得分 × 逻辑权重%) + (客户理解度得分 × 客户权重%) + (说服力得分 × 说服力权重%)
-            </p>
-            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300 mb-3">
-              <p>• 各维度得分范围：0-100分</p>
-              <p>• 最终总分范围：0-100分</p>
-              <p>• 80分以上为优秀，60-80分为良好，60分以下需要改进</p>
-            </div>
-            
-            <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📋 各维度评分标准</h4>
-            <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
-              <div>
-                <p class="font-medium">1. 表达质量得分（0-100分）</p>
-                <p class="mt-1 pl-2">• 语速（30%）：每分钟120-160字为最优，过快/过慢扣分</p>
-                <p class="pl-2">• 流畅度（30%）：根据停顿次数、重复次数、卡顿次数扣分</p>
-                <p class="pl-2">• 口头禅（20%）："嗯"、"啊"、"然后"等无意义助词出现频率扣分</p>
-                <p class="pl-2">• 语气（20%）：是否热情、自信，有无抑扬顿挫</p>
-              </div>
-              
-              <div>
-                <p class="font-medium">2. 内容完整度得分（0-100分）</p>
-                <p class="mt-1 pl-2">• 产品介绍（25%）：是否清晰说明产品核心功能和优势</p>
-                <p class="pl-2">• 需求挖掘（25%）：是否主动询问客户需求和痛点</p>
-                <p class="pl-2">• 方案呈现（25%）：是否针对客户需求给出具体解决方案</p>
-                <p class="pl-2">• 价值传递（25%）：是否清晰说明产品能为客户带来的价值</p>
-              </div>
-              
-              <div>
-                <p class="font-medium">3. 逻辑结构得分（0-100分）</p>
-                <p class="mt-1 pl-2">• 沟通逻辑（40%）：是否遵循"开场-需求挖掘-方案介绍-异议处理-收尾"的合理流程</p>
-                <p class="pl-2">• 条理清晰度（30%）：表达是否层次分明，重点突出</p>
-                <p class="pl-2">• 前后一致性（30%）：表达内容是否前后一致，无矛盾</p>
-              </div>
-              
-              <div>
-                <p class="font-medium">4. 客户理解度得分（0-100分）</p>
-                <p class="mt-1 pl-2">• 需求倾听（30%）：是否认真倾听客户讲话，不随意打断</p>
-                <p class="pl-2">• 痛点挖掘（30%）：是否准确识别客户核心痛点和顾虑</p>
-                <p class="pl-2">• 异议处理（40%）：是否能有效回应客户疑问和反对意见</p>
-              </div>
-              
-              <div>
-                <p class="font-medium">5. 说服力得分（0-100分）</p>
-                <p class="mt-1 pl-2">• 案例使用（30%）：是否使用成功案例或数据增强说服力</p>
-                <p class="pl-2">• 价值表达（30%）：是否能将产品特性转化为客户可感知的利益</p>
-                <p class="pl-2">• 成交引导（40%）：是否主动引导客户下一步动作，促进成交</p>
-              </div>
+            <div v-if="totalWeight !== 100" class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
+              权重总和必须等于100%，当前为 {{ totalWeight }}%
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- System Info -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">系统信息</h2>
-      </div>
-      <div class="card-content">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">后端版本</p>
-            <p class="text-lg font-medium text-slate-900 dark:text-white">
-              v1.0.0
-            </p>
-          </div>
-          <div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">前端框架</p>
-            <p class="text-lg font-medium text-slate-900 dark:text-white">
-              Vue 3 + Tailwind CSS
-            </p>
-          </div>
-          <div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">AI模型</p>
-            <p class="text-lg font-medium text-slate-900 dark:text-white">
-              Whisper Base (本地)
-            </p>
-          </div>
-          <div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">最大文件大小</p>
-            <p class="text-lg font-medium text-slate-900 dark:text-white">
-              200MB
-            </p>
-          </div>
-        </div>
-      </div>
+    <!-- Save Button -->
+    <div class="flex justify-end gap-3">
+      <button @click="resetDefaults" class="btn btn-secondary">
+        恢复默认
+      </button>
+      <button @click="saveSettings" class="btn btn-primary" :disabled="totalWeight !== 100">
+        保存设置
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
+
+const router = useRouter()
 
 const form = ref({
   openai_api_key: '',
   claude_api_key: '',
   deepseek_api_key: '',
   whisper_api_key: '',
-  expression_weight: 20,
-  content_weight: 30,
-  logic_weight: 20,
-  customer_weight: 20,
-  persuasion_weight: 10
+  expression_weight: 0.20,
+  content_weight: 0.30,
+  logic_weight: 0.20,
+  customer_weight: 0.20,
+  persuasion_weight: 0.10
 })
 
-const availableModels = ref({
-  asr: [],
-  nlp: []
+const totalWeight = computed(() => {
+  return Math.round(
+    (form.value.expression_weight + 
+    form.value.content_weight + 
+    form.value.logic_weight + 
+    form.value.customer_weight + 
+    form.value.persuasion_weight) * 100
+  )
 })
 
-const selectedModels = ref({
-  asr: '',
-  nlp: ''
-})
-
-const loadConfig = async () => {
+const fetchSettings = async () => {
   try {
-    // Load API config
-    const apiResponse = await axios.get('/api/v1/api-config')
-    form.value.openai_api_key = apiResponse.data.openai_api_key || ''
-    form.value.claude_api_key = apiResponse.data.claude_api_key || ''
-    form.value.deepseek_api_key = apiResponse.data.deepseek_api_key || ''
-    form.value.whisper_api_key = apiResponse.data.whisper_api_key || ''
+    const [apiConfig, scoringConfig] = await Promise.all([
+      axios.get('/api/v1/api-config'),
+      axios.get('/api/v1/scoring-config')
+    ])
     
-    // Load scoring config
-    const scoringResponse = await axios.get('/api/v1/scoring-config')
-    form.value.expression_weight = Math.round(scoringResponse.data.expression_weight * 100)
-    form.value.content_weight = Math.round(scoringResponse.data.content_weight * 100)
-    form.value.logic_weight = Math.round(scoringResponse.data.logic_weight * 100)
-    form.value.customer_weight = Math.round(scoringResponse.data.customer_weight * 100)
-    form.value.persuasion_weight = Math.round(scoringResponse.data.persuasion_weight * 100)
-  } catch (error) {
-    console.error('Failed to load config:', error)
-  }
-}
-
-const loadModels = async () => {
-  try {
-    // Load ASR models
-    const asrResponse = await axios.get('/api/v1/models', {
-      params: { scene: 'speech_analysis', task_type: 'asr' }
-    })
-    availableModels.value.asr = asrResponse.data.models
-    selectedModels.value.asr = asrResponse.data.selected_model_id || ''
+    if (apiConfig.data) {
+      form.value.openai_api_key = apiConfig.data.openai_api_key || ''
+      form.value.claude_api_key = apiConfig.data.claude_api_key || ''
+      form.value.deepseek_api_key = apiConfig.data.deepseek_api_key || ''
+      form.value.whisper_api_key = apiConfig.data.whisper_api_key || ''
+    }
     
-    // Load NLP models
-    const nlpResponse = await axios.get('/api/v1/models', {
-      params: { scene: 'speech_analysis', task_type: 'nlp' }
-    })
-    availableModels.value.nlp = nlpResponse.data.models
-    selectedModels.value.nlp = nlpResponse.data.selected_model_id || ''
+    if (scoringConfig.data) {
+      form.value.expression_weight = scoringConfig.data.expression_weight || 0.20
+      form.value.content_weight = scoringConfig.data.content_weight || 0.30
+      form.value.logic_weight = scoringConfig.data.logic_weight || 0.20
+      form.value.customer_weight = scoringConfig.data.customer_weight || 0.20
+      form.value.persuasion_weight = scoringConfig.data.persuasion_weight || 0.10
+    }
   } catch (error) {
-    console.error('Failed to load models:', error)
-  }
-}
-
-const setModelPreference = async (taskType, modelId) => {
-  try {
-    await axios.post('/api/v1/models/preference', null, {
-      params: {
-        scene: 'speech_analysis',
-        task_type: taskType,
-        model_id: modelId
-      }
-    })
-  } catch (error) {
-    console.error('Failed to set model preference:', error)
+    console.error('Failed to fetch settings:', error)
   }
 }
 
 const saveSettings = async () => {
+  if (totalWeight.value !== 100) {
+    alert('权重总和必须等于100%')
+    return
+  }
+  
   try {
-    // Save API config
-    await axios.post('/api/v1/api-config', {
+    await axios.put('/api/v1/api-config', {
       openai_api_key: form.value.openai_api_key,
       claude_api_key: form.value.claude_api_key,
       deepseek_api_key: form.value.deepseek_api_key,
       whisper_api_key: form.value.whisper_api_key
     })
     
-    // Save scoring config (convert to decimal weights)
-    await axios.post('/api/v1/scoring-config', {
-      expression_weight: form.value.expression_weight / 100,
-      content_weight: form.value.content_weight / 100,
-      logic_weight: form.value.logic_weight / 100,
-      customer_weight: form.value.customer_weight / 100,
-      persuasion_weight: form.value.persuasion_weight / 100
+    await axios.put('/api/v1/scoring-config', {
+      expression_weight: form.value.expression_weight,
+      content_weight: form.value.content_weight,
+      logic_weight: form.value.logic_weight,
+      customer_weight: form.value.customer_weight,
+      persuasion_weight: form.value.persuasion_weight
     })
     
-    // Reload models after API key change
-    await loadModels()
-    
-    alert('设置已保存！')
+    alert('设置已保存')
   } catch (error) {
     console.error('Failed to save settings:', error)
-    alert('保存失败，请重试。')
+    alert('保存失败: ' + (error.response?.data?.detail || error.message))
   }
 }
 
-const totalWeight = computed(() => {
-  return (
-    form.value.expression_weight +
-    form.value.content_weight +
-    form.value.logic_weight +
-    form.value.customer_weight +
-    form.value.persuasion_weight
-  )
-})
+const resetDefaults = () => {
+  form.value.expression_weight = 0.20
+  form.value.content_weight = 0.30
+  form.value.logic_weight = 0.20
+  form.value.customer_weight = 0.20
+  form.value.persuasion_weight = 0.10
+}
 
 onMounted(() => {
-  loadConfig()
-  loadModels()
+  fetchSettings()
 })
 </script>
-
-<style scoped>
-input[type="range"] {
-  accent-color: #3b82f6;
-}
-</style>

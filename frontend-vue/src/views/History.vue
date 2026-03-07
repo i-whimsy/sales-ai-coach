@@ -208,8 +208,13 @@ const statusText = (status) => {
 }
 
 const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN')
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleString('zh-CN')
+  } catch (error) {
+    console.error('Failed to parse date:', error)
+    return 'N/A'
+  }
 }
 
 onMounted(() => {

@@ -36,9 +36,9 @@ app = FastAPI(
     redoc_url=None
 )
 
-# Fix docs for offline usage
-from fix_docs import custom_docs
-app = custom_docs(app)
+# Fix docs for offline usage (暂时移除，直到找到fix_docs模块)
+# from fix_docs import custom_docs
+# app = custom_docs(app)
 
 # Configure CORS
 app.add_middleware(
@@ -245,7 +245,7 @@ async def get_recordings(db: Session = Depends(get_db)):
                 "id": recording.id,
                 "name": recording.name,
                 "file_name": recording.file_name,
-                "upload_time": recording.upload_time.isoformat(),
+                "upload_time": recording.upload_time.isoformat() + "Z",  # 添加Z表示UTC时间
                 "score": recording.score,
                 "status": "analyzed" if recording.report_json else "uploaded"
             }
@@ -254,6 +254,7 @@ async def get_recordings(db: Session = Depends(get_db)):
         return {"recordings": result}
     
     except Exception as e:
+        print(f"Error fetching recordings: {str(e)}")  # 添加日志以便调试
         raise HTTPException(status_code=500, detail=f"Error fetching recordings: {str(e)}")
 
 
@@ -747,7 +748,7 @@ async def rename_recording(recording_id: int, name_data: Dict[str, str], db: Ses
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)  # 修改为8001端口
 
 
 # ========== 模型管理API ==========

@@ -62,17 +62,17 @@ echo.
 echo 🎯 Starting frontend server...
 
 :: Check frontend dependencies
-if not exist "frontend\node_modules" (
+if not exist "frontend-vue\node_modules" (
     echo 🔧 Installing frontend dependencies...
-    cd frontend
+    cd frontend-vue
     npm install
     cd ..
     echo ✅ Frontend dependencies installed
 )
 
 :: Start frontend server
-start "AI Sales Frontend" /D "frontend" npm run dev
-echo ✅ Frontend server started on port 3000
+start "AI Sales Frontend" /D "frontend-vue" npm run dev
+echo ✅ Frontend server started on port 3002
 
 :: Wait for frontend
 ping -n 5 127.0.0.1 >nul
@@ -80,7 +80,7 @@ ping -n 5 127.0.0.1 >nul
 :: Open browser
 echo.
 echo 🌐 Opening browser...
-start http://localhost:3000
+start http://localhost:3002
 
 echo.
 echo ===============================================
@@ -88,7 +88,7 @@ echo 🎉 System started successfully!
 echo ===============================================
 echo.
 echo 📊 Access addresses:
-echo    Frontend: http://localhost:3000
+echo    Frontend: http://localhost:3002
 echo    Backend:  http://localhost:8000
 echo.
 echo 📋 Log files are in the logs folder

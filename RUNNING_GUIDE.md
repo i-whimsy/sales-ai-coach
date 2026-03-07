@@ -1,4 +1,4 @@
-# 运行指南
+﻿# 运行指南
 
 ## 📋 系统要求
 
@@ -284,3 +284,4 @@ python -c "from database import engine; from models import Base; Base.metadata.c
 2. Python 和 Node.js 版本
 3. 错误截图和完整日志
 4. 复现问题的操作步骤
+

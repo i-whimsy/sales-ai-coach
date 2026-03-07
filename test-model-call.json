@@ -1,6 +1,0 @@
-{
-  "task_name": "语音转写",
-  "input_data": {
-    "file_path": "test.wav"
-  }
-}

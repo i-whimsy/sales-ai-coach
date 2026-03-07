@@ -44,6 +44,13 @@
             >
               <span class="nav-text">系统设置</span>
             </RouterLink>
+            <RouterLink 
+              to="/models" 
+              class="nav-link" 
+              :class="{ 'text-primary-600 dark:text-primary-400': $route.name === 'ModelManagement' }"
+            >
+              <span class="nav-text">模型管理</span>
+            </RouterLink>
           </nav>
         </div>
       </div>

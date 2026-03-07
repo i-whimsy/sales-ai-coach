@@ -249,8 +249,9 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
         log_processing_step(recording_id, "生成报告", "in_progress", "综合所有指标生成最终报告")
         report = ai.generate_report(transcript, speech_result, score_weights)
         
-        # Save report
-        recording.report_json = report
+        # Save report - convert dict to JSON string
+        import json
+        recording.report_json = json.dumps(report, ensure_ascii=False)
         recording.score = report["total_score"]
         db.commit()
         

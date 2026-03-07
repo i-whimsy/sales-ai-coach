@@ -1,7 +1,7 @@
 """Database models for AI Sales Coaching System"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Boolean, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 from database import Base
@@ -17,8 +17,8 @@ class Recording(Base):
     file_path = Column(String, nullable=False)
     upload_time = Column(DateTime, default=datetime.utcnow, nullable=False)
     score = Column(Float, nullable=True)
-    report_json = Column(JSON, nullable=True)
-    transcript = Column(String, nullable=True)
+    report_json = Column(Text, nullable=True)
+    transcript = Column(Text, nullable=True)
     model_id = Column(Integer, ForeignKey("ai_models.id"), nullable=True)  # Selected model for analysis
     
     def __repr__(self):

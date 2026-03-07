@@ -124,7 +124,7 @@ def init_default_models(db: Session):
             "api_url": "https://api.openai.com/v1/audio/transcriptions",
             "model_name": "whisper-1",
             "is_default": True,
-            "config": {"timeout": 60},
+            "config": "{\"timeout\": 60}",
             "tags": ["语音识别", "多语言", "高准确率"]
         },
         {
@@ -135,7 +135,7 @@ def init_default_models(db: Session):
             "api_url": "https://aquasearch.volces.com/v1/audio/transcriptions",
             "model_name": "speech_asr_funasr-8k-zh",
             "is_default": False,
-            "config": {"timeout": 60},
+            "config": "{\"timeout\": 60}",
             "tags": ["语音识别", "中文", "高性能"]
         },
         {
@@ -146,7 +146,7 @@ def init_default_models(db: Session):
             "model_name": "base",
             "local_path": "./models/whisper",
             "is_default": False,
-            "config": {},
+            "config": "{}",
             "tags": ["语音识别", "多语言", "低资源"]
         },
         {
@@ -157,7 +157,7 @@ def init_default_models(db: Session):
             "model_name": "small",
             "local_path": "./models/whisper",
             "is_default": False,
-            "config": {},
+            "config": "{}",
             "tags": ["语音识别", "多语言", "高准确率"]
         },
         {
@@ -168,7 +168,7 @@ def init_default_models(db: Session):
             "model_name": "medium",
             "local_path": "./models/whisper",
             "is_default": False,
-            "config": {},
+            "config": "{}",
             "tags": ["语音识别", "多语言", "高准确率"]
         },
         

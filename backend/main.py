@@ -915,11 +915,12 @@ async def create_model(model_data: dict, db: Session = Depends(get_db)):
             name=model_data["name"],
             type=model_data["type"],
             category=model_data["category"],
-            provider=model_data["provider"],
+            provider=model_data.get("provider"),
             api_url=model_data.get("api_url"),
             api_key=model_data.get("api_key"),
             model_name=model_data.get("model_name"),
             local_path=model_data.get("local_path"),
+            command_args=model_data.get("command_args"),
             config=model_data.get("config"),
             is_default=model_data.get("is_default", False)
         )
@@ -998,6 +999,8 @@ async def update_model(model_id: int, model_data: dict, db: Session = Depends(ge
             model.model_name = model_data["model_name"]
         if "local_path" in model_data:
             model.local_path = model_data["local_path"]
+        if "command_args" in model_data:
+            model.command_args = model_data["command_args"]
         if "config" in model_data:
             model.config = model_data["config"]
         if "status" in model_data:
@@ -1308,10 +1311,11 @@ async def check_local_model(model_name: str):
         raise HTTPException(status_code=500, detail=f"Error checking model: {str(e)}")
 
 
-# 初始化默认模型
-@app.on_event("startup")
+# 初始化默认模型 - 暂时禁用
+# @app.on_event("startup")
 async def init_default_models():
     """系统启动时初始化默认模型"""
+    pass  # 暂时禁用
     from database import SessionLocal
     
     db = SessionLocal()

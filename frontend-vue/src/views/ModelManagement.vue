@@ -20,8 +20,9 @@
       <div class="flex flex-wrap gap-4">
         <select v-model="filterType" class="form-select w-auto">
           <option value="">全部类型</option>
-          <option value="online">在线模型</option>
-          <option value="local">本地模型</option>
+          <option value="api">API模型</option>
+          <option value="local_service">本地服务</option>
+          <option value="local_program">本地程序</option>
         </select>
         <select v-model="filterCategory" class="form-select w-auto">
           <option value="">全部类别</option>
@@ -48,14 +49,16 @@
           <div class="flex-1">
             <div class="flex items-center gap-3">
               <h3 class="text-lg font-semibold text-slate-900 dark:text-white">{{ model.name }}</h3>
-              <span :class="getTypeBadgeClass(model.type)" class="badge">{{ model.type === 'online' ? '在线' : '本地' }}</span>
+              <span :class="getTypeBadgeClass(model.type)" class="badge">{{ getTypeName(model.type) }}</span>
               <span :class="getCategoryBadgeClass(model.category)" class="badge">{{ getCategoryName(model.category) }}</span>
               <span :class="getStatusBadgeClass(model.status)" class="badge">{{ model.status === 'active' ? '已激活' : '未激活' }}</span>
             </div>
             <div class="mt-2 text-sm text-slate-600 dark:text-slate-400">
               <p>供应商: {{ model.provider || '未设置' }}</p>
+              <p v-if="model.type === 'api'">API地址: {{ model.api_url || '未设置' }}</p>
+              <p v-if="model.type === 'local_service'">服务地址: {{ model.api_url || '未设置' }}</p>
+              <p v-if="model.type === 'local_program'">程序路径: {{ model.local_path || '未设置' }}</p>
               <p>模型标识: {{ model.model_name || '未设置' }}</p>
-              <p v-if="model.api_url">API地址: {{ model.api_url }}</p>
             </div>
             <!-- 标签 -->
             <div class="mt-3 flex flex-wrap gap-2">
@@ -96,21 +99,23 @@
     <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-center justify-center p-4">
         <div class="fixed inset-0 bg-black/50" @click="closeModal"></div>
-        <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl p-6">
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
           <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">
             {{ showEditModal ? '编辑模型' : '添加模型' }}
           </h3>
           <form @submit.prevent="saveModel" class="space-y-4">
+            <!-- 基本信息 -->
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="form-label">模型名称</label>
                 <input v-model="modelForm.name" type="text" class="form-input" required />
               </div>
               <div>
-                <label class="form-label">类型</label>
-                <select v-model="modelForm.type" class="form-select" required>
-                  <option value="online">在线模型</option>
-                  <option value="local">本地模型</option>
+                <label class="form-label">模型类型</label>
+                <select v-model="modelForm.type" class="form-select" required @change="onTypeChange">
+                  <option value="api">API模型 (云服务)</option>
+                  <option value="local_service">本地服务 (Ollama等)</option>
+                  <option value="local_program">本地程序 (faster-whisper等)</option>
                 </select>
               </div>
               <div>
@@ -128,21 +133,9 @@
                 <label class="form-label">供应商</label>
                 <input v-model="modelForm.provider" type="text" class="form-input" />
               </div>
-              <div class="col-span-2">
-                <label class="form-label">模型标识</label>
-                <input v-model="modelForm.model_name" type="text" class="form-input" />
-              </div>
-              <div class="col-span-2">
-                <label class="form-label">API地址</label>
-                <input v-model="modelForm.api_url" type="text" class="form-input" placeholder="https://api.example.com/v1/..." />
-              </div>
-              <div class="col-span-2">
-                <label class="form-label">API密钥</label>
-                <input v-model="modelForm.api_key" type="password" class="form-input" />
-              </div>
               <div>
-                <label class="form-label">本地路径 (本地模型)</label>
-                <input v-model="modelForm.local_path" type="text" class="form-input" />
+                <label class="form-label">模型标识</label>
+                <input v-model="modelForm.model_name" type="text" class="form-input" :placeholder="modelPlaceholder" />
               </div>
               <div>
                 <label class="form-label">设为默认</label>
@@ -152,6 +145,48 @@
                 </label>
               </div>
             </div>
+
+            <!-- API模型配置 -->
+            <div v-if="modelForm.type === 'api'" class="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <h4 class="font-medium text-blue-900 dark:text-blue-300">API模型配置</h4>
+              <div>
+                <label class="form-label">API地址</label>
+                <input v-model="modelForm.api_url" type="text" class="form-input" placeholder="https://api.openai.com/v1/chat/completions" />
+              </div>
+              <div>
+                <label class="form-label">API密钥</label>
+                <input v-model="modelForm.api_key" type="password" class="form-input" placeholder="sk-xxxxxxxxxxxxx" />
+              </div>
+            </div>
+
+            <!-- 本地服务配置 -->
+            <div v-if="modelForm.type === 'local_service'" class="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <h4 class="font-medium text-green-900 dark:text-green-300">本地服务配置</h4>
+              <p class="text-xs text-green-700 dark:text-green-400">运行 Ollama、LocalAI 等本地模型服务</p>
+              <div>
+                <label class="form-label">服务地址</label>
+                <input v-model="modelForm.api_url" type="text" class="form-input" placeholder="http://localhost:11434" />
+              </div>
+              <div>
+                <label class="form-label">API密钥 (可选)</label>
+                <input v-model="modelForm.api_key" type="password" class="form-input" placeholder="如需认证则填写" />
+              </div>
+            </div>
+
+            <!-- 本地程序配置 -->
+            <div v-if="modelForm.type === 'local_program'" class="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <h4 class="font-medium text-purple-900 dark:text-purple-300">本地程序配置</h4>
+              <p class="text-xs text-purple-700 dark:text-purple-400">直接调用本地Python程序或命令行工具</p>
+              <div>
+                <label class="form-label">程序/命令路径</label>
+                <input v-model="modelForm.local_path" type="text" class="form-input" placeholder="D:\models\whisper 或 whisper.exe" />
+              </div>
+              <div>
+                <label class="form-label">运行参数 (可选)</label>
+                <input v-model="modelForm.command_args" type="text" class="form-input" placeholder="--model base --language zh" />
+              </div>
+            </div>
+
             <div class="flex justify-end gap-3 mt-6">
               <button type="button" @click="closeModal" class="btn-secondary">取消</button>
               <button type="submit" class="btn-primary">保存</button>
@@ -203,15 +238,24 @@ const testResult = ref({})
 const modelForm = ref({
   id: null,
   name: '',
-  type: 'online',
+  type: 'api',
   category: 'ASR',
   provider: '',
   model_name: '',
   api_url: '',
   api_key: '',
   local_path: '',
+  command_args: '',
   is_default: false
 })
+
+const modelPlaceholders = {
+  api: '如: gpt-4o, whisper-1',
+  local_service: '如: llama3, mistral',
+  local_program: '如: base, small'
+}
+
+const modelPlaceholder = computed(() => modelPlaceholders[modelForm.value.type] || '')
 
 const filteredModels = computed(() => {
   return models.value.filter(model => {
@@ -221,6 +265,23 @@ const filteredModels = computed(() => {
     return true
   })
 })
+
+const onTypeChange = () => {
+  // 清空相关字段
+  modelForm.value.api_url = ''
+  modelForm.value.api_key = ''
+  modelForm.value.local_path = ''
+  modelForm.value.command_args = ''
+}
+
+const getTypeName = (type) => {
+  const names = {
+    api: 'API模型',
+    local_service: '本地服务',
+    local_program: '本地程序'
+  }
+  return names[type] || type
+}
 
 const getCategoryName = (category) => {
   const names = {
@@ -235,9 +296,12 @@ const getCategoryName = (category) => {
 }
 
 const getTypeBadgeClass = (type) => {
-  return type === 'online' 
-    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+  const classes = {
+    api: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    local_service: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    local_program: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+  }
+  return classes[type] || 'bg-gray-100 text-gray-800'
 }
 
 const getCategoryBadgeClass = (category) => {
@@ -278,6 +342,7 @@ const saveModel = async () => {
       api_url: modelForm.value.api_url,
       api_key: modelForm.value.api_key,
       local_path: modelForm.value.local_path,
+      command_args: modelForm.value.command_args,
       is_default: modelForm.value.is_default
     }
     
@@ -296,7 +361,11 @@ const saveModel = async () => {
 }
 
 const editModel = (model) => {
-  modelForm.value = { ...model, is_default: model.is_default || false }
+  modelForm.value = { 
+    ...model, 
+    is_default: model.is_default || false,
+    command_args: model.command_args || ''
+  }
   showEditModal.value = true
 }
 
@@ -306,13 +375,14 @@ const closeModal = () => {
   modelForm.value = {
     id: null,
     name: '',
-    type: 'online',
+    type: 'api',
     category: 'ASR',
     provider: '',
     model_name: '',
     api_url: '',
     api_key: '',
     local_path: '',
+    command_args: '',
     is_default: false
   }
 }

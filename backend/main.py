@@ -105,7 +105,12 @@ async def health_check():
 
 
 @app.post("/api/v1/recordings")
-async def upload_recording(file: UploadFile = File(...), name: str = None, db: Session = Depends(get_db)):
+async def upload_recording(
+    file: UploadFile = File(...), 
+    name: str = None, 
+    model_id: int = None,
+    db: Session = Depends(get_db)
+):
     """Upload recording file"""
     try:
         # Validate file type
@@ -124,11 +129,22 @@ async def upload_recording(file: UploadFile = File(...), name: str = None, db: S
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
+        # Validate model_id if provided
+        selected_model = None
+        if model_id:
+            selected_model = db.query(models.AIModel).filter(
+                models.AIModel.id == model_id,
+                models.AIModel.status == "active"
+            ).first()
+            if not selected_model:
+                raise HTTPException(status_code=400, detail="无效的模型ID或模型未激活")
+        
         # Create database entry
         recording = models.Recording(
             name=name,
             file_name=file.filename,
-            file_path=file_path
+            file_path=file_path,
+            model_id=model_id  # 保存选择的模型ID
         )
         db.add(recording)
         db.commit()
@@ -139,9 +155,13 @@ async def upload_recording(file: UploadFile = File(...), name: str = None, db: S
             "name": recording.name,
             "file_name": recording.file_name,
             "upload_time": recording.upload_time.isoformat(),
-            "status": "uploaded"
+            "status": "uploaded",
+            "model_id": recording.model_id,
+            "model_name": selected_model.name if selected_model else None
         })
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
 
@@ -176,12 +196,29 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
                 "whisper_api_key": api_config.whisper_api_key
             }
         
+        # Get selected model for this recording
+        selected_model = None
+        if recording.model_id:
+            selected_model = db.query(models.AIModel).filter(
+                models.AIModel.id == recording.model_id,
+                models.AIModel.status == "active"
+            ).first()
+        
+        model_info = "默认Whisper模型"
+        if selected_model:
+            model_info = f"{selected_model.name} ({selected_model.type})"
+            # Update config with model's API key if available
+            if selected_model.api_key:
+                config["whisper_api_key"] = selected_model.api_key
+            if selected_model.type == "online" and selected_model.model_name:
+                config["whisper_model"] = selected_model.model_name
+        
         # Initialize AI analyzer
         log_processing_step(recording_id, "初始化分析器", "in_progress", "加载AI分析组件")
         ai = ai_analyzer.AIAnalyzer(config)
         
         # Transcribe audio
-        log_processing_step(recording_id, "语音转文本", "in_progress", "使用Whisper Base模型进行转录")
+        log_processing_step(recording_id, "语音转文本", "in_progress", f"使用{model_info}进行转录")
         transcript, duration = speech_analyzer.transcribe_audio(recording.file_path)
         recording.transcript = transcript
         db.commit()
@@ -242,13 +279,22 @@ async def get_recordings(db: Session = Depends(get_db)):
         recordings = db.query(models.Recording).all()
         result = []
         for recording in recordings:
+            # Get model info
+            model_name = None
+            if recording.model_id:
+                model = db.query(models.AIModel).filter(models.AIModel.id == recording.model_id).first()
+                if model:
+                    model_name = model.name
+            
             item = {
                 "id": recording.id,
                 "name": recording.name,
                 "file_name": recording.file_name,
                 "upload_time": recording.upload_time.isoformat() + "Z",  # 添加Z表示UTC时间
                 "score": recording.score,
-                "status": "analyzed" if recording.report_json else "uploaded"
+                "status": "analyzed" if recording.report_json else "uploaded",
+                "model_id": recording.model_id,
+                "model_name": model_name
             }
             result.append(item)
         
@@ -270,6 +316,13 @@ async def get_recording(recording_id: int, db: Session = Depends(get_db)):
         if not recording:
             raise HTTPException(status_code=404, detail="Recording not found")
         
+        # Get model info if available
+        model_name = None
+        if recording.model_id:
+            model = db.query(models.AIModel).filter(models.AIModel.id == recording.model_id).first()
+            if model:
+                model_name = model.name
+        
         return {
             "id": recording.id,
             "name": recording.name,
@@ -278,7 +331,9 @@ async def get_recording(recording_id: int, db: Session = Depends(get_db)):
             "score": recording.score,
             "transcript": recording.transcript,
             "report": recording.report_json,
-            "status": "analyzed" if recording.report_json else "uploaded"
+            "status": "analyzed" if recording.report_json else "uploaded",
+            "model_id": recording.model_id,
+            "model_name": model_name
         }
     
     except Exception as e:

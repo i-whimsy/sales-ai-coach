@@ -52,13 +52,27 @@
           </div>
           
           <!-- Custom Name Input -->
-          <div class="max-w-md mx-auto w-full">
+          <div class="max-w-md mx-auto w-full space-y-4">
             <input
               v-model="customName"
               type="text"
               placeholder="自定义文件名（可选）"
               class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
             />
+            
+            <!-- Model Selection -->
+            <div class="flex items-center gap-2 justify-center">
+              <label class="text-sm text-slate-600 dark:text-slate-400">选择模型:</label>
+              <select
+                v-model="selectedModelId"
+                class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
+              >
+                <option :value="null">默认模型</option>
+                <option v-for="model in availableModels" :key="model.id" :value="model.id">
+                  {{ model.name }} ({{ model.type === 'online' ? '在线' : '本地' }})
+                </option>
+              </select>
+            </div>
           </div>
           
           <div class="flex flex-col gap-3 items-center">
@@ -168,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -177,6 +191,21 @@ const router = useRouter()
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const customName = ref('')
+const selectedModelId = ref(null)
+const availableModels = ref([])
+
+const fetchAvailableModels = async () => {
+  try {
+    const response = await axios.get('/api/v1/models')
+    availableModels.value = (response.data.models || []).filter(m => m.status === 'active')
+  } catch (error) {
+    console.error('Failed to fetch models:', error)
+  }
+}
+
+onMounted(() => {
+  fetchAvailableModels()
+})
 const isDragging = ref(false)
 const uploading = ref(false)
 const uploadProgress = ref(0)
@@ -250,6 +279,9 @@ const uploadFile = async () => {
     formData.append('file', selectedFile.value)
     if (customName.value.trim()) {
       formData.append('name', customName.value.trim())
+    }
+    if (selectedModelId.value) {
+      formData.append('model_id', selectedModelId.value)
     }
 
     const response = await axios.post('/api/v1/recordings', formData, {

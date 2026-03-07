@@ -971,6 +971,8 @@ async def update_model(model_id: int, model_data: dict, db: Session = Depends(ge
             model.local_path = model_data["local_path"]
         if "config" in model_data:
             model.config = model_data["config"]
+        if "status" in model_data:
+            model.status = model_data["status"]
         
         # 处理默认设置
         if "is_default" in model_data:

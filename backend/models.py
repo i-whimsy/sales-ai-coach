@@ -19,6 +19,7 @@ class Recording(Base):
     score = Column(Float, nullable=True)
     report_json = Column(JSON, nullable=True)
     transcript = Column(String, nullable=True)
+    model_id = Column(Integer, ForeignKey("ai_models.id"), nullable=True)  # Selected model for analysis
     
     def __repr__(self):
         return f"<Recording(id={self.id}, name={self.name}, file_name={self.file_name}, score={self.score})>"

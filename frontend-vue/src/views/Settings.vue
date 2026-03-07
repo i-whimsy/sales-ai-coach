@@ -220,17 +220,57 @@
           </div>
 
           <div class="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📊 评分计算逻辑</h3>
+            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📊 总分计算逻辑</h3>
             <p class="text-xs text-slate-600 dark:text-slate-300 mb-2">
               系统采用加权平均法计算最终得分，计算公式为：
             </p>
             <p class="text-xs font-mono bg-white dark:bg-slate-800 p-2 rounded mb-2">
               总分 = (表达质量得分 × 表达权重%) + (内容完整度得分 × 内容权重%) + (逻辑结构得分 × 逻辑权重%) + (客户理解度得分 × 客户权重%) + (说服力得分 × 说服力权重%)
             </p>
-            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300 mb-3">
               <p>• 各维度得分范围：0-100分</p>
               <p>• 最终总分范围：0-100分</p>
               <p>• 80分以上为优秀，60-80分为良好，60分以下需要改进</p>
+            </div>
+            
+            <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">📋 各维度评分标准</h4>
+            <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+              <div>
+                <p class="font-medium">1. 表达质量得分（0-100分）</p>
+                <p class="mt-1 pl-2">• 语速（30%）：每分钟120-160字为最优，过快/过慢扣分</p>
+                <p class="pl-2">• 流畅度（30%）：根据停顿次数、重复次数、卡顿次数扣分</p>
+                <p class="pl-2">• 口头禅（20%）："嗯"、"啊"、"然后"等无意义助词出现频率扣分</p>
+                <p class="pl-2">• 语气（20%）：是否热情、自信，有无抑扬顿挫</p>
+              </div>
+              
+              <div>
+                <p class="font-medium">2. 内容完整度得分（0-100分）</p>
+                <p class="mt-1 pl-2">• 产品介绍（25%）：是否清晰说明产品核心功能和优势</p>
+                <p class="pl-2">• 需求挖掘（25%）：是否主动询问客户需求和痛点</p>
+                <p class="pl-2">• 方案呈现（25%）：是否针对客户需求给出具体解决方案</p>
+                <p class="pl-2">• 价值传递（25%）：是否清晰说明产品能为客户带来的价值</p>
+              </div>
+              
+              <div>
+                <p class="font-medium">3. 逻辑结构得分（0-100分）</p>
+                <p class="mt-1 pl-2">• 沟通逻辑（40%）：是否遵循"开场-需求挖掘-方案介绍-异议处理-收尾"的合理流程</p>
+                <p class="pl-2">• 条理清晰度（30%）：表达是否层次分明，重点突出</p>
+                <p class="pl-2">• 前后一致性（30%）：表达内容是否前后一致，无矛盾</p>
+              </div>
+              
+              <div>
+                <p class="font-medium">4. 客户理解度得分（0-100分）</p>
+                <p class="mt-1 pl-2">• 需求倾听（30%）：是否认真倾听客户讲话，不随意打断</p>
+                <p class="pl-2">• 痛点挖掘（30%）：是否准确识别客户核心痛点和顾虑</p>
+                <p class="pl-2">• 异议处理（40%）：是否能有效回应客户疑问和反对意见</p>
+              </div>
+              
+              <div>
+                <p class="font-medium">5. 说服力得分（0-100分）</p>
+                <p class="mt-1 pl-2">• 案例使用（30%）：是否使用成功案例或数据增强说服力</p>
+                <p class="pl-2">• 价值表达（30%）：是否能将产品特性转化为客户可感知的利益</p>
+                <p class="pl-2">• 成交引导（40%）：是否主动引导客户下一步动作，促进成交</p>
+              </div>
             </div>
           </div>
         </div>

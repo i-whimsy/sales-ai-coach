@@ -1,0 +1,6 @@
+# SalesCoach CLI Requirements
+click>=8.1.0
+rich>=13.0.0
+openai>=1.0.0
+whisper>=20231117
+pydub>=0.25.1

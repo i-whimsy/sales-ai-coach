@@ -141,6 +141,52 @@
       </div>
     </div>
 
+    <!-- Prompt Configuration -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Prompt配置</h2>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          为每个分析任务配置自定义Prompt。使用{transcript}占位符表示转录文本。
+        </p>
+      </div>
+      <div class="p-6 space-y-4">
+        <div v-for="task in workflowTasks" :key="task.name" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-medium text-slate-900 dark:text-white">{{ task.name }}</h3>
+              <p class="text-xs text-slate-500">{{ task.description }}</p>
+            </div>
+            <button 
+              @click="togglePromptEditor(task.name)"
+              class="px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              {{ task.showPromptEditor ? '隐藏' : '编辑Prompt' }}
+            </button>
+          </div>
+          
+          <div v-if="task.showPromptEditor" class="mt-2">
+            <textarea
+              v-model="task.prompt"
+              rows="4"
+              class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              placeholder="输入自定义Prompt，使用{transcript}表示转录文本..."
+            ></textarea>
+            <div class="mt-2 flex justify-between items-center">
+              <span class="text-xs text-slate-500">
+                长度: {{ task.prompt?.length || 0 }} 字符
+              </span>
+              <button 
+                @click="resetPrompt(task.name)"
+                class="px-3 py-1 text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                恢复默认
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Analysis Workflow -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
       <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
@@ -201,12 +247,12 @@ const form = ref({
 })
 
 const workflowTasks = ref([
-  { name: '语音转写', description: '将音频转换为文字', model_id: null },
-  { name: '内容分析', description: '分析内容完整性和逻辑', model_id: null },
-  { name: '情感识别', description: '识别语音情感倾向', model_id: null },
-  { name: '说话人识别', description: '识别说话人身份', model_id: null },
-  { name: '意图识别', description: '识别客户意图', model_id: null },
-  { name: '质量评分', description: '综合评分', model_id: null }
+  { name: '语音转写', description: '将音频转换为文字', model_id: null, prompt: '', showPromptEditor: false },
+  { name: '内容分析', description: '分析内容完整性和逻辑', model_id: null, prompt: '', showPromptEditor: false },
+  { name: '情感识别', description: '识别语音情感倾向', model_id: null, prompt: '', showPromptEditor: false },
+  { name: '说话人识别', description: '识别说话人身份', model_id: null, prompt: '', showPromptEditor: false },
+  { name: '意图识别', description: '识别客户意图', model_id: null, prompt: '', showPromptEditor: false },
+  { name: '质量评分', description: '综合评分', model_id: null, prompt: '', showPromptEditor: false }
 ])
 
 const activeModels = ref([])
@@ -239,8 +285,24 @@ const fetchSettings = async () => {
       if (tasksResponse.data.tasks) {
         tasksResponse.data.tasks.forEach(task => {
           const wfTask = workflowTasks.value.find(t => t.name === task.task_name)
-          if (wfTask && task.default_model_id) {
-            wfTask.model_id = task.default_model_id
+          if (wfTask) {
+            if (task.default_model_id) {
+              wfTask.model_id = task.default_model_id
+            }
+            if (task.prompt_config) {
+              wfTask.prompt = task.prompt_config
+            } else {
+              // Set default prompts if not configured
+              const defaultPrompts = {
+                '语音转写': '请将以下音频转录为文字：{transcript}',
+                '内容分析': '请分析以下销售对话的内容完整性和逻辑结构：{transcript}',
+                '情感识别': '请识别以下语音的情感倾向：{transcript}',
+                '说话人识别': '请识别以下音频中的说话人身份：{transcript}',
+                '意图识别': '请识别以下对话中的客户意图：{transcript}',
+                '质量评分': '请对以下销售对话进行综合评分：{transcript}'
+              }
+              wfTask.prompt = defaultPrompts[wfTask.name] || ''
+            }
           }
         })
       }
@@ -260,18 +322,41 @@ const fetchSettings = async () => {
   }
 }
 
-const getModelName = (modelId) => {
-  const model = activeModels.value.find(m => m.id === modelId)
-  return model ? model.name : '未知模型'
+const togglePromptEditor = (taskName) => {
+  const task = workflowTasks.value.find(t => t.name === taskName)
+  if (task) {
+    task.showPromptEditor = !task.showPromptEditor
+  }
 }
 
-const updateTaskModel = async (taskName, modelId) => {
+const resetPrompt = (taskName) => {
+  const task = workflowTasks.value.find(t => t.name === taskName)
+  if (task) {
+    // 设置默认Prompt
+    const defaultPrompts = {
+      '语音转写': '请将以下音频转录为文字：{transcript}',
+      '内容分析': '请分析以下销售对话的内容完整性和逻辑结构：{transcript}',
+      '情感识别': '请识别以下语音的情感倾向：{transcript}',
+      '说话人识别': '请识别以下音频中的说话人身份：{transcript}',
+      '意图识别': '请识别以下对话中的客户意图：{transcript}',
+      '质量评分': '请对以下销售对话进行综合评分：{transcript}'
+    }
+    task.prompt = defaultPrompts[taskName] || ''
+  }
+}
+
+const savePromptConfig = async (taskName) => {
+  const task = workflowTasks.value.find(t => t.name === taskName)
+  if (!task) return
+  
   try {
     await axios.put(`/api/v1/tasks/${taskName}`, {
-      default_model_id: modelId
+      prompt_config: task.prompt
     })
+    alert('Prompt配置已保存')
   } catch (error) {
-    console.error('Failed to update task model:', error)
+    console.error('Failed to save prompt:', error)
+    alert('保存失败: ' + (error.response?.data?.detail || error.message))
   }
 }
 
@@ -289,6 +374,15 @@ const saveSettings = async () => {
       customer_weight: form.value.customer_weight,
       persuasion_weight: form.value.persuasion_weight
     })
+    
+    // Save prompt configs for each task
+    for (const task of workflowTasks.value) {
+      if (task.prompt) {
+        await axios.put(`/api/v1/tasks/${task.name}`, {
+          prompt_config: task.prompt
+        }).catch(e => console.error('Failed to save prompt for', task.name, e))
+      }
+    }
     
     alert('设置已保存')
   } catch (error) {

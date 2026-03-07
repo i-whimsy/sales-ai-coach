@@ -1,0 +1,17 @@
+{
+  "expression_score": 60.86,
+  "metrics": {
+    "char_count": 245,
+    "word_count": 245,
+    "estimated_duration_minutes": 1.63,
+    "speaking_rate_wpm": 150.0,
+    "pause_count": 7,
+    "pause_frequency_per_min": 4.29,
+    "fluency_score": 17.14,
+    "rate_score": 90
+  },
+  "assessment": [
+    "语速适中",
+    "表达不够流畅，停顿较多"
+  ]
+}

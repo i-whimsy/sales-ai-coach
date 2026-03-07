@@ -1,0 +1,24 @@
+{
+  "content_score": 100.0,
+  "structure_score": 0.0,
+  "logic_score": 60,
+  "content_covered": [
+    "公司介绍",
+    "行业问题",
+    "技术方案",
+    "核心优势",
+    "客户案例",
+    "商业价值"
+  ],
+  "content_missing": [],
+  "structure_covered": [],
+  "assessment": {
+    "strengths": [
+      "内容涵盖面较广",
+      "逻辑性较强"
+    ],
+    "issues": [
+      "结构不够清晰"
+    ]
+  }
+}

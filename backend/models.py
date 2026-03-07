@@ -137,6 +137,7 @@ class TaskModelConfig(Base):
     required_tags = Column(JSON, nullable=True)  # 任务要求的模型标签，只有包含这些标签的模型才能被选
     default_model_id = Column(Integer, nullable=True)  # 任务默认使用的模型ID
     fallback_model_ids = Column(JSON, nullable=True)  # 备选模型ID列表，当默认模型不可用时依次尝试
+    prompt_config = Column(Text, nullable=True)  # 自定义Prompt配置
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

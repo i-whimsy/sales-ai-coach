@@ -211,8 +211,25 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
                 raise HTTPException(status_code=400, detail=f"模型 '{model_check.name}' 未激活，请先在模型管理中激活")
             
             selected_model = model_check
+        else:
+            # No specific model selected, check for active default model
+            default_model = db.query(models.AIModel).filter(
+                models.AIModel.is_default == True,
+                models.AIModel.status == "active"
+            ).first()
+            
+            if default_model:
+                selected_model = default_model
+            else:
+                # Check if there's any active model in ASR category
+                any_active_model = db.query(models.AIModel).filter(
+                    models.AIModel.category == "ASR",
+                    models.AIModel.status == "active"
+                ).first()
+                
+                if not any_active_model:
+                    raise HTTPException(status_code=400, detail="没有可用的激活模型，请先在模型管理中激活至少一个模型")
         
-        model_info = "默认Whisper模型"
         if selected_model:
             model_info = f"{selected_model.name} ({selected_model.type})"
             # Update config with model's API key if available
@@ -220,6 +237,8 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
                 config["whisper_api_key"] = selected_model.api_key
             if selected_model.type == "online" and selected_model.model_name:
                 config["whisper_model"] = selected_model.model_name
+        else:
+            model_info = "默认Whisper模型"
         
         # Initialize AI analyzer
         log_processing_step(recording_id, "初始化分析器", "in_progress", "加载AI分析组件")
@@ -276,6 +295,8 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
             "processing_steps": processing_logs.get(recording_id, [])
         })
     
+    except HTTPException:
+        raise
     except Exception as e:
         log_processing_step(recording_id, "分析失败", "failed", str(e))
         raise HTTPException(status_code=500, detail=f"Error analyzing recording: {str(e)}")

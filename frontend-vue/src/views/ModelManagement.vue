@@ -399,7 +399,7 @@ const toggleModelStatus = async (model) => {
 
 const testModel = async (model) => {
   try {
-    const response = await axios.post(`${API_BASE}/models/test`, { model_id: model.id })
+    const response = await axios.post(`${API_BASE}/models/${model.id}/test`)
     testResult.value = response.data
     showTestModal.value = true
   } catch (error) {

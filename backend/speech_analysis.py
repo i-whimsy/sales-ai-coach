@@ -4,16 +4,29 @@ import numpy as np
 import whisper
 import librosa
 import soundfile as sf
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
 import re
 
 
 class SpeechAnalyzer:
     """Class for analyzing speech characteristics from audio"""
     
-    def __init__(self):
-        """Initialize speech analyzer"""
-        self.whisper_model = whisper.load_model("base")
+    def __init__(self, model_name: str = "base", local_path: Optional[str] = None):
+        """
+        Initialize speech analyzer with configurable model
+        
+        Args:
+            model_name: Whisper model name (tiny/base/small/medium/large)
+            local_path: Optional custom model path or download root
+        """
+        self.model_name = model_name
+        self.local_path = local_path
+        
+        # Load model with configured settings
+        if local_path:
+            self.whisper_model = whisper.load_model(model_name, download_root=local_path)
+        else:
+            self.whisper_model = whisper.load_model(model_name)
     
     def analyze_speech_rate(self, transcript: str, audio_duration: float) -> float:
         """

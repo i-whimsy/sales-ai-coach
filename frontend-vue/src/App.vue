@@ -52,6 +52,13 @@
               <span class="nav-text">模型管理</span>
             </RouterLink>
             <RouterLink 
+              to="/prompt-config" 
+              class="nav-link" 
+              :class="{ 'text-primary-600 dark:text-primary-400': $route.name === 'PromptConfig' }"
+            >
+              <span class="nav-text">分析配置</span>
+            </RouterLink>
+            <RouterLink 
               to="/logs" 
               class="nav-link" 
               :class="{ 'text-primary-600 dark:text-primary-400': $route.name === 'LogViewer' }"

@@ -1,0 +1,47 @@
+{
+  "models": {
+    "speech_to_text": {
+      "provider": "whisper",
+      "model": "base",
+      "device": "auto"
+    },
+    "vad": {
+      "provider": "silero",
+      "threshold": 0.5
+    },
+    "emotion": {
+      "provider": "speechbrain",
+      "model": "emotion-recognition-wav2vec2"
+    }
+  },
+
+  "audio_analysis": {
+    "enable_pitch": true,
+    "enable_energy": true,
+    "enable_pause": true,
+    "enable_jitter": true,
+    "enable_shimmer": true
+  },
+
+  "transcript": {
+    "save_transcript": true
+  },
+
+  "performance": {
+    "use_gpu": true,
+    "batch_size": 16,
+    "num_workers": 4
+  },
+
+  "output": {
+    "indent": 2,
+    "ensure_ascii": false,
+    "include_transcript": true
+  },
+
+  "features": {
+    "enable_emotion": true,
+    "enable_jitter_shimmer": true,
+    "skip_if_too_long": 3600
+  }
+}

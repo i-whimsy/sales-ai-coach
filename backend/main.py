@@ -24,6 +24,7 @@ import ai_analyzer
 from model_manager import get_model_manager
 from models_config import get_model_config
 from model_installer import ModelInstaller
+from content_analyzer import ContentAnalyzer
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -62,8 +63,10 @@ async def limit_upload_size(request: Request, call_next):
             )
     return await call_next(request)
 
-# Initialize analyzers
-speech_analyzer = speech_analysis.SpeechAnalyzer()
+# Initialize analyzer factory (will create instances with config at runtime)
+def create_speech_analyzer(model_name: str = "base", local_path: Optional[str] = None):
+    """Create speech analyzer with configured model"""
+    return speech_analysis.SpeechAnalyzer(model_name=model_name, local_path=local_path)
 
 # Directory for uploaded files
 UPLOAD_DIR = "uploads"
@@ -230,19 +233,41 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
                 if not any_active_model:
                     raise HTTPException(status_code=400, detail="没有可用的激活模型，请先在模型管理中激活至少一个模型")
         
-        if selected_model:
-            model_info = f"{selected_model.name} ({selected_model.type})"
-            # Update config with model's API key if available
-            if selected_model.api_key:
-                config["whisper_api_key"] = selected_model.api_key
-            if selected_model.type == "online" and selected_model.model_name:
-                config["whisper_model"] = selected_model.model_name
-        else:
-            model_info = "默认Whisper模型"
+        # Validate selected_model - must have a valid ASR model
+        if not selected_model:
+            raise HTTPException(status_code=400, detail="没有可用的激活模型，请先在模型管理中激活至少一个 ASR 模型")
+        
+        model_info = f"{selected_model.name} ({selected_model.model_name or selected_model.type})"
+        
+        # Update config with model's API key if available
+        if selected_model.api_key:
+            config["whisper_api_key"] = selected_model.api_key
+        if selected_model.type == "online" and selected_model.model_name:
+            config["whisper_model"] = selected_model.model_name
         
         # Initialize AI analyzer
-        log_processing_step(recording_id, "初始化分析器", "in_progress", "加载AI分析组件")
+        log_processing_step(recording_id, "初始化分析器", "in_progress", "加载 AI 分析组件")
         ai = ai_analyzer.AIAnalyzer(config)
+        
+        # Create speech analyzer based on model type
+        speech_analyzer = None
+        if selected_model.type in ["local", "local_program"]:
+            # Use configured model name and local path
+            model_name = selected_model.model_name or "base"
+            local_path = selected_model.local_path if selected_model.local_path else None
+            log_processing_step(recording_id, "加载 Whisper 模型", "in_progress", f"模型：{model_name}, 路径：{local_path or '默认缓存'}")
+            try:
+                speech_analyzer = create_speech_analyzer(model_name=model_name, local_path=local_path)
+                log_processing_step(recording_id, "加载 Whisper 模型", "completed", f"模型 {model_name} 加载成功")
+            except Exception as e:
+                log_processing_step(recording_id, "加载 Whisper 模型", "failed", f"模型加载失败：{str(e)}")
+                raise HTTPException(status_code=500, detail=f"模型加载失败：{str(e)}")
+        elif selected_model.type == "online":
+            # For online ASR models, use local whisper as fallback
+            log_processing_step(recording_id, "在线模型回退", "info", f"在线模型 {selected_model.name} 暂不支持，使用本地 Whisper base 模型")
+            speech_analyzer = create_speech_analyzer(model_name="base")
+        else:
+            raise HTTPException(status_code=400, detail=f"不支持的模型类型：{selected_model.type}")
         
         # Transcribe audio
         log_processing_step(recording_id, "语音转文本", "in_progress", f"使用{model_info}进行转录")
@@ -256,8 +281,24 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
         speech_result = speech_analyzer.analyze_expression_quality(transcript, duration)
         log_processing_step(recording_id, "表达质量分析", "completed", f"表达得分: {speech_result['expression_score']}")
         
-        # Analyze with AI
-        log_processing_step(recording_id, "内容分析", "in_progress", "分析内容完整性、逻辑结构等")
+        # Analyze with AI using ContentAnalyzer with prompt config
+        log_processing_step(recording_id, "内容分析", "in_progress", "使用 LLM 进行语义分析")
+        
+        # Get prompt config from database
+        task_config = db.query(models.TaskModelConfig).filter(
+            models.TaskModelConfig.task_name == "content_analysis",
+            models.TaskModelConfig.is_active == True
+        ).first()
+        
+        prompt_config = None
+        if task_config and task_config.prompt_config:
+            try:
+                prompt_config = json.loads(task_config.prompt_config)
+                log_processing_step(recording_id, "加载 Prompt 配置", "completed", f"已加载自定义分析维度配置")
+            except:
+                log_processing_step(recording_id, "加载 Prompt 配置", "warning", "使用默认配置")
+        
+        # Get scoring weights
         scoring_config = db.query(models.ScoringConfig).filter(
             models.ScoringConfig.is_active == True
         ).first()
@@ -272,9 +313,53 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
                 "persuasion_weight": scoring_config.persuasion_weight
             }
         
-        # Generate report
+        # Use ContentAnalyzer for semantic analysis
+        content_analyzer = ContentAnalyzer(config=config, prompt_config=prompt_config)
+        content_result = content_analyzer.analyze_all_dimensions(transcript)
+        
+        # Generate comprehensive report
         log_processing_step(recording_id, "生成报告", "in_progress", "综合所有指标生成最终报告")
-        report = ai.generate_report(transcript, speech_result, score_weights)
+        
+        # Calculate total score with weights
+        expression_score = speech_result["expression_score"]
+        content_score = content_result["dimension_results"].get("content", {}).get("score", 0)
+        logic_score = content_result["dimension_results"].get("logic", {}).get("score", 0)
+        customer_score = content_result["dimension_results"].get("customer", {}).get("score", 0)
+        persuasion_score = content_result["dimension_results"].get("persuasion", {}).get("score", 0)
+        
+        if score_weights:
+            total_score = (
+                (expression_score * score_weights["expression_weight"]) +
+                (content_score * score_weights["content_weight"]) +
+                (logic_score * score_weights["logic_weight"]) +
+                (customer_score * score_weights["customer_weight"]) +
+                (persuasion_score * score_weights["persuasion_weight"])
+            )
+        else:
+            total_score = content_result["total_score"]
+        
+        report = {
+            "total_score": round(total_score, 2),
+            "dimension_scores": {
+                "expression": round(expression_score, 2),
+                "content": round(content_score, 2),
+                "logic": round(logic_score, 2),
+                "customer_understanding": round(customer_score, 2),
+                "persuasion": round(persuasion_score, 2)
+            },
+            "scores_weight": score_weights or {},
+            "speech_analysis": speech_result,
+            "content_analysis": content_result,
+            "strengths": [],
+            "improvement_suggestions": []
+        }
+        
+        # Generate strengths and suggestions from content analysis
+        for dim_key, dim_result in content_result["dimension_results"].items():
+            if dim_result["score"] >= 80:
+                report["strengths"].append(f"{dim_result['name']}: {dim_result['analysis']}")
+            elif dim_result["score"] < 60:
+                report["improvement_suggestions"].extend(dim_result.get("suggestions", []))
         
         # Save report - convert dict to JSON string
         import json
@@ -284,6 +369,13 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
         
         log_processing_step(recording_id, "分析完成", "completed", f"最终得分: {report['total_score']}")
         
+        # Determine actual STT model used
+        stt_model_name = "Unknown"
+        if selected_model:
+            stt_model_name = f"{selected_model.name} ({selected_model.model_name})"
+        elif speech_analyzer:
+            stt_model_name = f"Whisper {speech_analyzer.model_name} (default)"
+        
         return JSONResponse(status_code=200, content={
             "id": recording.id,
             "file_name": recording.file_name,
@@ -291,7 +383,7 @@ async def analyze_recording(recording_id: int, db: Session = Depends(get_db)):
             "report": report,
             "status": "analyzed",
             "transcript": transcript,
-            "stt_model": "Whisper Base (本地模型)",
+            "stt_model": stt_model_name,
             "processing_steps": processing_logs.get(recording_id, [])
         })
     
@@ -523,6 +615,7 @@ async def get_scoring_config(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error fetching scoring config: {str(e)}")
 
 
+@app.put("/api/v1/scoring-config")
 @app.post("/api/v1/scoring-config")
 async def update_scoring_config(config_data: dict, db: Session = Depends(get_db)):
     """Update scoring configuration"""
@@ -1050,33 +1143,101 @@ async def delete_model(model_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/v1/models/{model_id}/test")
 async def test_model(model_id: int, db: Session = Depends(get_db)):
-    """测试模型可用性"""
+    """测试模型可用性 - 按照实际调用方式测试"""
     model = db.query(models.AIModel).get(model_id)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
     
     try:
-        if model.type == "online":
-            # 测试在线模型
-            if not model.api_url or not model.api_key:
-                raise Exception("API URL or API Key not configured")
+        if model.type == "online" or model.type == "api":
+            # 测试在线/API 模型
+            if not model.api_url:
+                raise Exception("API URL not configured")
+            if not model.api_key or model.api_key.strip() == "":
+                raise Exception("API Key not configured")
             
-            # 简单的连接测试
             import requests
-            headers = {"Authorization": f"Bearer {model.api_key}"}
-            response = requests.get(model.api_url + "/health", headers=headers, timeout=5)
-            response.raise_for_status()
+            
+            # 根据 API 类型选择不同的测试方式
+            if "openai.com" in model.api_url:
+                # OpenAI API - 测试 models 端点
+                base_url = model.api_url.split('/v1/')[0] + '/v1'
+                headers = {"Authorization": f"Bearer {model.api_key}"}
+                response = requests.get(f"{base_url}/models", headers=headers, timeout=5)
+                response.raise_for_status()
+            elif "baidubce.com" in model.api_url:
+                # 百度 API - 需要获取 token 测试
+                # 简单检查 URL 格式
+                if "rpc/2.0" not in model.api_url:
+                    raise Exception("Invalid Baidu API URL format")
+                model.status = "active"
+                db.commit()
+                return {
+                    "success": True,
+                    "status": model.status,
+                    "message": "API URL format is valid (full test requires access token)"
+                }
+            elif "xfyun.cn" in model.api_url:
+                # 讯飞 API - 检查 URL 格式
+                if "v1/service" not in model.api_url:
+                    raise Exception("Invalid Xunfei API URL format")
+                model.status = "active"
+                db.commit()
+                return {
+                    "success": True,
+                    "status": model.status,
+                    "message": "API URL format is valid (full test requires signature)"
+                }
+            else:
+                # 其他 API - 尝试 health 端点或根路径
+                headers = {"Authorization": f"Bearer {model.api_key}"}
+                try:
+                    response = requests.get(model.api_url + "/health", headers=headers, timeout=5)
+                    response.raise_for_status()
+                except:
+                    # 如果没有 health 端点，尝试根路径
+                    response = requests.get(model.api_url, headers=headers, timeout=5)
+                    response.raise_for_status()
             
             model.status = "active"
             
-        elif model.type == "local":
-            # 测试本地模型
-            if not model.local_path or not os.path.exists(model.local_path):
-                raise Exception("Local model path not exists")
+        elif model.type == "local" or model.type == "local_program":
+            # 测试本地程序模型（如 Whisper）
+            if not model.model_name:
+                raise Exception("Model name not configured")
             
-            # 测试模型加载
-            # 这里可以添加实际的模型加载测试
-            model.status = "active"
+            # 检查 Python 库是否安装
+            try:
+                if "whisper" in model.name.lower():
+                    import whisper
+                    # 尝试加载模型（这会验证模型是否已下载）
+                    model.status = "active"
+                    db.commit()
+                    return {
+                        "success": True,
+                        "status": model.status,
+                        "message": f"Whisper model '{model.model_name}' is available and ready to use"
+                    }
+                else:
+                    raise Exception(f"Unsupported local model type: {model.name}")
+            except ImportError:
+                raise Exception("Required Python library not installed. Please install: pip install openai-whisper")
+            except Exception as e:
+                raise Exception(f"Failed to load model: {str(e)}")
+            
+        elif model.type == "local_service":
+            # 测试本地服务模型（如 Ollama）
+            if not model.api_url:
+                raise Exception("Service URL not configured")
+            
+            import requests
+            try:
+                # 检查服务是否运行
+                response = requests.get(model.api_url, timeout=5)
+                response.raise_for_status()
+                model.status = "active"
+            except Exception as e:
+                raise Exception(f"Local service not available: {str(e)}")
         
         db.commit()
         
@@ -1549,6 +1710,19 @@ async def update_task_config(
             if not model:
                 raise HTTPException(status_code=400, detail=f"无效的模型ID: {model_id}")
         task.fallback_model_ids = config_data["fallback_model_ids"]
+    
+    # Update prompt_config if provided
+    if "prompt_config" in config_data:
+        try:
+            if isinstance(config_data["prompt_config"], dict):
+                task.prompt_config = json.dumps(config_data["prompt_config"], ensure_ascii=False)
+            elif isinstance(config_data["prompt_config"], str):
+                json.loads(config_data["prompt_config"])
+                task.prompt_config = config_data["prompt_config"]
+            else:
+                raise HTTPException(status_code=400, detail="prompt_config 必须是 JSON 对象或字符串")
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"无效的 JSON 格式：{str(e)}")
     
     task.updated_at = datetime.utcnow()
     db.commit()

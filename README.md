@@ -1,173 +1,294 @@
-﻿# AI 销售教练系统
+# Sales Audio Analyzer CLI
 
-AI Sales Coaching System 是一个基于人工智能的销售能力提升系统。销售人员可以上传自己的销售录音，系统会自动识别语音、多维度分析销售表现，并生成详细的评分和改进建议，帮助销售人员快速提升沟通和销售能力。
+客观语音指标提取工具 - 用于销售讲解音频分析
 
-## ✨ 核心功能
+## 特点
 
-### 🎤 录音上传与管理
-- 支持 MP3、WAV、M4A 等常见音频格式
-- 最大支持 200MB 文件上传
-- 录音列表管理，支持重命名、删除等操作
+- ✅ **只做客观指标提取**，不做主观评价
+- ✅ **结构化 JSON 输出**，供大模型二次分析
+- ✅ **8 大类指标**：音频信息、VAD、语速、韵律、情绪、填充词等
+- ✅ **模块化设计**，易于扩展
+- ✅ **支持多种模型**：Whisper、Silero VAD、SpeechBrain
 
-### 🧠 智能语音识别
-- 内置本地 Whisper 模型，无需网络即可完成语音转文字
-- 支持中英文混合识别，准确率高达 95%+
-- 自动区分说话人，识别停顿和语气词
+## 安装
 
-### 📊 多维度智能分析
-系统从五个维度对销售表现进行全面评估：
-- **表达质量（20%）**：语速、流畅度、停顿、口头禅分析
-- **内容完整度（30%）**：产品介绍、需求挖掘、方案呈现、价值传递完整性评估
-- **逻辑结构（20%）**：沟通逻辑、流程合理性、说服力评估
-- **客户理解度（20%）**：需求倾听、痛点挖掘、异议处理能力评估
-- **说服力（10%）**：案例使用、价值表达、成交引导能力评估
-
-### 📈 可视化报告
-- 直观的评分仪表盘，多维度对比分析
-- 详细的改进建议，针对性提升能力
-- 支持报告导出和分享
-- 历史记录对比，跟踪能力成长
-
-### ⚙️ 灵活配置
-- 自定义评分权重，适配不同行业销售场景
-- 支持配置 OpenAI、Claude、DeepSeek 等多种大模型
-- 本地运行，数据安全可控
-
-### 💻 命令行工具 (CLI)
-除了 Web 界面，还提供命令行工具进行本地分析：
 ```bash
-cd cli
+# 进入项目目录
+cd sales-audio-cli
+
+# 安装依赖
 pip install -r requirements.txt
-
-# 分析录音
-python cli/main.py analyze audio.mp3
-
-# 仅转写
-python cli/main.py transcript audio.mp3
-
-# 对比两个录音
-python cli/main.py compare audio1.mp3 audio2.mp3
 ```
 
-## 🚀 快速开始
+### 系统要求
 
-### 环境要求
-- Python 3.11+
-- Node.js 18+
-- Windows / macOS / Linux
+- Python 3.8+
+- PyTorch 2.0+
+- 建议：NVIDIA GPU（加速 Whisper 和 SpeechBrain）
 
-### 一键启动（推荐）
-#### Windows
-```batch
-start-all.bat
-```
+## 快速开始
 
-#### macOS/Linux
+### 基础分析
+
 ```bash
-chmod +x start-all.sh
-./start-all.sh
+python cli.py analyze demo.wav
 ```
 
-### 手动启动
+### 完整选项
 
-#### 1. 启动后端服务
 ```bash
-cd backend
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-
-pip install -r requirements.txt
-python main.py
+python cli.py analyze demo.wav \
+  --config config.json \
+  --output result.json \
+  --model large \
+  --show-progress \
+  --save-transcript \
+  --verbose \
+  --export-llm-prompt
 ```
-后端服务将在 http://localhost:8000 启动
 
-#### 2. 启动前端服务
+### 仅转录
+
 ```bash
-cd frontend-vue
-npm install
-npm run dev
-```
-前端服务将在 http://localhost:3002 启动
-
-### 访问系统
-打开浏览器访问 http://localhost:3002 即可使用系统
-
-## 📖 系统架构
-
-```
-├── backend/                 # 后端服务
-│   ├── main.py             # FastAPI 主程序
-│   ├── database.py         # 数据库配置
-│   ├── models.py           # 数据模型
-│   ├── ai_analyzer.py      # AI 分析引擎
-│   ├── speech_analysis.py  # 语音分析模块
-│   └── requirements.txt    # Python 依赖
-├── frontend-vue/           # Vue 前端
-│   ├── src/
-│   │   ├── views/          # 页面组件
-│   │   ├── assets/         # 静态资源
-│   │   └── main.js         # 入口文件
-│   └── package.json        # Node.js 依赖
-├── sales_coach.db          # SQLite 数据库（自动创建）
-├── uploads/                # 上传文件存储
-├── logs/                   # 日志文件存储
-└── reports/                # 分析报告存储
+python cli.py transcribe demo.wav -o transcript.txt
 ```
 
-## 🔧 API 接口
+### 对比分析
 
-### 基础接口
-- `GET /health` - 健康检查
-- `GET /api/v1/recordings` - 获取录音列表
-- `POST /api/v1/recordings` - 上传录音
-- `POST /api/v1/recordings/{id}/analyze` - 分析录音
-- `GET /api/v1/recordings/{id}` - 获取录音详情
-- `DELETE /api/v1/recordings/{id}` - 删除录音
+```bash
+python cli.py compare v1.wav v2.wav
+```
 
-### 配置接口
-- `GET /api/v1/api-config` - 获取 API 配置
-- `POST /api/v1/api-config` - 更新 API 配置
-- `GET /api/v1/scoring-config` - 获取评分配置
-- `POST /api/v1/scoring-config` - 更新评分配置
+## 输出格式
 
-## 🛠️ 技术栈
+### JSON 结构
 
-### 后端
-- FastAPI - 高性能 Web 框架
-- SQLAlchemy - ORM 框架
-- SQLite - 轻量级数据库
-- OpenAI Whisper - 语音识别
-- 支持 OpenAI/Claude/DeepSeek 大模型
+```json
+{
+  "audio_info": {
+    "duration_seconds": 185,
+    "sample_rate": 16000,
+    "file_size_mb": 2.8
+  },
+  "vad_analysis": {
+    "speech_duration": 150,
+    "silence_duration": 35,
+    "speech_ratio": 0.81,
+    "pause_count": 23,
+    "avg_pause_duration": 1.1
+  },
+  "speech_metrics": {
+    "words_total": 820,
+    "words_per_minute": 266
+  },
+  "prosody_metrics": {
+    "pitch_mean_hz": 145,
+    "pitch_std_hz": 28,
+    "energy_mean": 0.24,
+    "energy_cv": 0.33
+  },
+  "emotion_metrics": {
+    "dominant_emotion": "neutral",
+    "confidence": 0.73
+  },
+  "transcript": {
+    "text": "完整转写文本...",
+    "model": "whisper-base"
+  },
+  "filler_metrics": {
+    "filler_word_count": 18,
+    "filler_ratio": 0.021,
+    "fillers_per_100_words": 2.2
+  },
+  "processing_meta": {
+    "timestamp": "2026-03-08T12:00:00",
+    "pipeline_version": "0.1.0"
+  }
+}
+```
 
-### 前端
-- Vue 3 - 渐进式 JavaScript 框架
-- Vite - 下一代前端构建工具
-- Tailwind CSS - 实用优先的 CSS 框架
-- Axios - HTTP 客户端
+### LLM Prompt
 
-## 📝 更新日志
+使用 `--export-llm-prompt` 时生成：
 
-### v2.0.0 (2026-03-07)
-- ✨ 全新 Vue 3 前端界面，更美观易用
-- 🔧 修复数据库字段不匹配问题
-- 🚀 优化 API 代理配置，解决跨域问题
-- 📊 修复历史页面和详情页运行时错误
-- ⚡ 提升整体性能和稳定性
+```
+你是一个销售培训专家。
 
-## 🤝 贡献指南
-欢迎提交 Issue 和 Pull Request 帮助改进项目。
+下面是一次销售讲解的客观语音分析数据...
 
-## 📄 许可证
-MIT License
+分析数据如下：
+{
+  "audio_info": {...},
+  "vad_analysis": {...},
+  ...
+}
+```
 
----
+## 配置
 
-## 🚀 项目介绍
-AI 销售教练系统是由 OpenClaw 自主研发的智能销售能力提升平台，基于 FastAPI + Vue 3 技术栈构建，支持语音识别、多维度智能分析、自动评分等核心功能。
+### config.json
 
-本项目完全开源，欢迎 Star 和 Fork！
+```json
+{
+  "models": {
+    "speech_to_text": {
+      "provider": "whisper",
+      "model": "base",
+      "device": "auto"
+    },
+    "vad": {
+      "provider": "silero",
+      "threshold": 0.5
+    },
+    "emotion": {
+      "provider": "speechbrain",
+      "model": "emotion-recognition-wav2vec2"
+    }
+  },
+  "audio_analysis": {
+    "enable_pitch": true,
+    "enable_energy": true,
+    "enable_pause": true,
+    "enable_jitter": true,
+    "enable_shimmer": true
+  },
+  "features": {
+    "enable_emotion": true,
+    "enable_jitter_shimmer": true,
+    "skip_if_too_long": 3600
+  }
+}
+```
 
+## 指标说明
+
+### 1. 音频基础信息
+- `duration_seconds`: 音频时长（秒）
+- `sample_rate`: 采样率（Hz）
+- `file_size_mb`: 文件大小（MB）
+
+### 2. VAD 分析
+- `speech_ratio`: 语音占比
+- `pause_count`: 停顿次数
+- `avg_pause_duration`: 平均停顿时长
+- `long_pause_count`: 长停顿（>2s）次数
+
+### 3. 语速指标
+- `words_total`: 总词数
+- `words_per_minute`: 每分钟词数（WPM）
+
+### 4. 韵律特征
+- `pitch_mean_hz`: 平均音高（Hz）
+- `pitch_range_hz`: 音高范围（Hz）
+- `energy_cv`: 能量变异系数
+
+### 5. 情绪识别
+- `dominant_emotion`: 主导情绪
+- `confidence`: 置信度
+- `emotion_probabilities`: 各情绪概率
+
+### 6. 填充词
+- `filler_word_count`: 填充词总数
+- `fillers_per_100_words`: 每 100 词填充词数
+
+## 项目结构
+
+```
+sales-audio-cli/
+├── cli.py                  # 主 CLI 入口
+├── config.json             # 配置文件
+├── prompt_template.txt     # LLM Prompt 模板
+├── requirements.txt        # Python 依赖
+│
+├── modules/
+│   ├── __init__.py
+│   ├── audio_loader.py     # 音频加载
+│   ├── vad_analyzer.py     # VAD 分析
+│   ├── speech_to_text.py   # 语音转文本
+│   ├── prosody_analyzer.py # 韵律分析
+│   ├── emotion_analyzer.py # 情绪识别
+│   ├── filler_detector.py  # 填充词检测
+│   ├── metrics_builder.py  # 指标构建
+│   └── json_exporter.py    # JSON 导出
+│
+└── outputs/                # 输出目录
+    └── {audio_name}/
+        ├── analysis_result.json
+        ├── transcript.txt
+        └── llm_prompt.txt
+```
+
+## 典型工作流
+
+### 1. 销售培训场景
+
+```bash
+# 分析销售录音
+python cli.py analyze sales_call.wav \
+  --output analysis.json \
+  --export-llm-prompt
+
+# 将 JSON + Prompt 发送给大模型
+# 获取评价和建议
+```
+
+### 2. 批量分析
+
+```bash
+# 对多个文件进行分析
+for file in recordings/*.wav; do
+  python cli.py analyze "$file" --output "results/$(basename "$file" .wav).json"
+done
+
+# 汇总结果进行对比
+```
+
+### 3. A/B 测试
+
+```bash
+# 对比两个版本
+python cli.py compare v1.wav v2.wav
+
+# 查看哪个版本语速更合适、填充词更少
+```
+
+## 性能优化
+
+### GPU 加速
+
+在 `config.json` 中配置：
+
+```json
+{
+  "performance": {
+    "use_gpu": true,
+    "batch_size": 16
+  }
+}
+```
+
+### 跳过耗时分析
+
+```bash
+# 跳过情绪分析（SpeechBrain 模型较大）
+python cli.py analyze demo.wav --no-emotion
+```
+
+## 常见问题
+
+### Q: Whisper 模型下载慢？
+A: 使用镜像或手动下载模型到 `~/.cache/whisper/`
+
+### Q: 情绪识别失败？
+A: SpeechBrain 需要较多显存，可使用 `--no-emotion` 跳过
+
+### Q: 中文识别不准？
+A: 使用 `whisper-large-v3` 模型，或指定 `--model large`
+
+## License
+
+MIT
+
+## 版本
+
+- v0.1.0 - 初始版本

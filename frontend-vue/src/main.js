@@ -12,6 +12,7 @@ import Report from './views/Report.vue'
 import Settings from './views/Settings.vue'
 import ModelManagement from './views/ModelManagement.vue'
 import LogViewer from './views/LogViewer.vue'
+import PromptConfig from './views/PromptConfig.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -22,6 +23,7 @@ const routes = [
   { path: '/settings', name: 'Settings', component: Settings },
   { path: '/models', name: 'ModelManagement', component: ModelManagement },
   { path: '/logs', name: 'LogViewer', component: LogViewer },
+  { path: '/prompt-config', name: 'PromptConfig', component: PromptConfig },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

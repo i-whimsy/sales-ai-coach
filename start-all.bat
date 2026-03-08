@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 echo ==============================================
 echo 🚀 AI销售教练系统一键启动脚本
@@ -45,7 +45,7 @@ if not exist "backend\venv" (
 
 REM 启动后端
 start "Backend Server" /MIN python backend\main.py
-echo ✅ 后端服务器已启动 (端口: 8000)
+echo ✅ 后端服务器已启动 (端口: 8001)
 
 REM 等待后端启动
 timeout /t 3 /nobreak >nul
@@ -53,7 +53,7 @@ timeout /t 3 /nobreak >nul
 REM 检查后端是否启动成功
 echo.
 echo 🔍 检查后端服务...
-curl -s http://localhost:8000/health >nul 2>&1
+curl -s http://localhost:8001/health >nul 2>&1
 if %errorlevel% equ 0 (
     echo ✅ 后端服务健康检查通过
 ) else (
@@ -94,7 +94,7 @@ echo ==============================================
 echo.
 echo 📊 系统访问地址:
 echo    前端界面: http://localhost:3002
-echo    后端API:  http://localhost:8000
+echo    后端API:  http://localhost:8001
 echo.
 echo 📋 日志文件位置:
 echo    前端日志: logs/frontend.log

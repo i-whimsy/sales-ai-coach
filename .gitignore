@@ -4,9 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -22,6 +19,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+backend/venv/
 
 # IDE
 .vscode/
@@ -30,17 +35,23 @@ wheels/
 *.swo
 *~
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Database
+*.db
+!sales_coach.db
+
+# Logs
+logs/
+*.log
+
 # Output
 outputs/
-*.json
-!config.json
-*.txt
-!README.md
-!QUICKSTART.md
-!INSTALL.md
-!COMPLETION_REPORT.md
-!requirements.txt
-!prompt_template.txt
+uploads/
 
 # Models and cache
 pretrained_models/
@@ -53,5 +64,13 @@ pretrained_models/
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Frontend
+frontend-vue/node_modules/
+frontend-vue/dist/
+frontend-vue/.env.local
+frontend-vue/.env.*.local

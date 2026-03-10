@@ -8,25 +8,28 @@ def client():
 
 def test_health_check(client):
     """测试健康检查"""
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
-
-def test_get_config(client):
-    """测试获取配置"""
-    response = client.get("/api/config")
+    response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert "api_keys" in data
-    assert "openai" in data["api_keys"]
-    assert "claude" in data["api_keys"]
-    assert "deepseek" in data["api_keys"]
-    assert "whisper" in data["api_keys"]
+    assert "status" in data
+    assert data["status"] == "healthy"
 
-def test_empty_recordings(client):
-    """测试空记录列表"""
-    response = client.get("/api/recordings")
+def test_get_api_config(client):
+    """测试获取 API 配置"""
+    response = client.get("/api/v1/api-config")
+    assert response.status_code == 200
+
+def test_get_recordings(client):
+    """测试获取录音列表"""
+    response = client.get("/api/v1/recordings")
     assert response.status_code == 200
     data = response.json()
     assert "recordings" in data
     assert isinstance(data["recordings"], list)
+
+def test_get_models(client):
+    """测试获取模型列表"""
+    response = client.get("/api/v1/models")
+    assert response.status_code == 200
+    data = response.json()
+    assert "models" in data

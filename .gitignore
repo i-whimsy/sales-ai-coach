@@ -74,3 +74,6 @@ frontend-vue/node_modules/
 frontend-vue/dist/
 frontend-vue/.env.local
 frontend-vue/.env.*.local
+
+# Backend node_modules
+node_modules/
